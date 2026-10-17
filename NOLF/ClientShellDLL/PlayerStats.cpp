@@ -25,6 +25,8 @@
 #include "SurfaceFunctions.h"
 #include "CharacterFX.h"
 
+LTBOOL DemoObjectives();	// GameClientShell.cpp, the Objectives console command
+
 // +DemoTrack: [game time, kind, name, count] for each weapon, ammo count, mod and gear the player gets.
 extern void DemoTrackItem(const char* pKind, const char* pName, int nCount);
 
@@ -761,7 +763,7 @@ void CPlayerStats::Update()
         m_bObjCompleted = LTFALSE;
 	}
 
-	m_bObjVisible = (g_pLTClient->IsCommandOn(COMMAND_ID_MISSION) && g_pInterfaceMgr->GetGameState() == GS_PLAYING);
+	m_bObjVisible = ((g_pLTClient->IsCommandOn(COMMAND_ID_MISSION) || DemoObjectives()) && g_pInterfaceMgr->GetGameState() == GS_PLAYING);
 
 }
 
