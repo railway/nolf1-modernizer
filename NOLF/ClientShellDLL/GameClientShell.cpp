@@ -394,6 +394,22 @@ void FireFn(int argc, char **argv)
 	s_bDemoFirePressed = LTTRUE;
 }
 
+// Objectives <seconds>: holds the Mission key down for that long in game time, so
+// the objectives show as while the player holds it. For measuring with +DemoCmds;
+// CPlayerStats::Update reads it through DemoObjectives()...
+
+static LTFLOAT	s_fDemoObjectivesUntil	= -1.0f;	// game time the key is let go
+
+LTBOOL DemoObjectives()
+{
+	return g_pLTClient->GetGameTime() <= s_fDemoObjectivesUntil;
+}
+
+void ObjectivesFn(int argc, char **argv)
+{
+	s_fDemoObjectivesUntil = g_pLTClient->GetGameTime() + (argc > 0 ? (LTFLOAT)atof(argv[0]) : 0.0f);
+}
+
 void SavePoseFn(int argc, char **argv)
 {
 	if (g_pGameClientShell)
@@ -1770,6 +1786,7 @@ uint32 CGameClientShell::OnEngineInitialized(RMode *pMode, LTGUID *pAppGuid)
     g_pLTClient->RegisterConsoleProgram("SavePose", SavePoseFn);
     g_pLTClient->RegisterConsoleProgram("SetPlayerPos", SetPlayerPosFn);
     g_pLTClient->RegisterConsoleProgram("Fire", FireFn);
+    g_pLTClient->RegisterConsoleProgram("Objectives", ObjectivesFn);
     g_pLTClient->RegisterConsoleProgram("Folder", FolderFn);
     g_pLTClient->RegisterConsoleProgram("Sunglass", SunglassFn);
     g_pLTClient->RegisterConsoleProgram("LeakFile", LeakFileFn);
