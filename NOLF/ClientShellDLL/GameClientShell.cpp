@@ -2014,6 +2014,12 @@ uint32 CGameClientShell::OnEngineInitialized(RMode *pMode, LTGUID *pAppGuid)
 	}
 
 
+	// The Fade bodies option (+FadeBodies), read before a world starts below: the
+	// load message hands it to the server (DoLoadWorld), and read after that, a
+	// world started with +runworld or +DemoMission never faded its bodies...
+
+	m_bFadeBodies = (LTBOOL)GetConsoleInt("FadeBodies",0);
+
 	// Okay, start the game...
 
 	if (!bNetworkGameStarted)
@@ -2165,7 +2171,6 @@ uint32 CGameClientShell::OnEngineInitialized(RMode *pMode, LTGUID *pAppGuid)
 		nDiff = GD_VERYHARD;
 
 	m_eDifficulty = (GameDifficulty)nDiff;
-	m_bFadeBodies = (LTBOOL)GetConsoleInt("FadeBodies",0);
 
 	// Check for playdemo....
 
