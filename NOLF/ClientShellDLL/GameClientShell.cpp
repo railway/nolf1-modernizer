@@ -410,6 +410,18 @@ void ObjectivesFn(int argc, char **argv)
 	s_fDemoObjectivesUntil = g_pLTClient->GetGameTime() + (argc > 0 ? (LTFLOAT)atof(argv[0]) : 0.0f);
 }
 
+// ToggleFlashLight: switches the player's flash light on or off, as a press of
+// the FlashLight key does (the command goes through OnCommandOn). For measuring
+// with +DemoCmds...
+
+void ToggleFlashLightFn(int argc, char **argv)
+{
+	if (g_pGameClientShell)
+	{
+		g_pGameClientShell->HandleToggleFlashLight();
+	}
+}
+
 void SavePoseFn(int argc, char **argv)
 {
 	if (g_pGameClientShell)
@@ -1787,6 +1799,7 @@ uint32 CGameClientShell::OnEngineInitialized(RMode *pMode, LTGUID *pAppGuid)
     g_pLTClient->RegisterConsoleProgram("SetPlayerPos", SetPlayerPosFn);
     g_pLTClient->RegisterConsoleProgram("Fire", FireFn);
     g_pLTClient->RegisterConsoleProgram("Objectives", ObjectivesFn);
+    g_pLTClient->RegisterConsoleProgram("ToggleFlashLight", ToggleFlashLightFn);
     g_pLTClient->RegisterConsoleProgram("Folder", FolderFn);
     g_pLTClient->RegisterConsoleProgram("Sunglass", SunglassFn);
     g_pLTClient->RegisterConsoleProgram("LeakFile", LeakFileFn);
@@ -5920,6 +5933,11 @@ void CGameClientShell::HandleRecord(int argc, char **argv)
 	{
         g_pLTClient->CPrint("Error starting world");
 	}
+}
+
+void CGameClientShell::HandleToggleFlashLight()
+{
+	OnCommandOn(COMMAND_ID_FLASHLIGHT);
 }
 
 void CGameClientShell::HandlePlaydemo(int argc, char **argv)
