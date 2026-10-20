@@ -42,6 +42,8 @@ END_CLASS_DEFAULT_FLAGS(Body, Prop, NULL, NULL, CF_HIDDEN)
 
 static LTFLOAT s_fUpdateDelta		= 0.1f;
 
+static CVarTrack s_AnimTrack;
+
 static char s_szKeyNoise[]	= "NOISE";
 static char s_szKeyLand[]	= "LAND";
 
@@ -233,6 +235,8 @@ uint32 Body::EngineMessageFn(uint32 messageID, void *pData, LTFLOAT fData)
 			{
 				m_pState->HandleTouch(hObject);
 			}
+
+			TrackBody("bodytouch", hObject);
 		}
 		break;
 
@@ -883,6 +887,69 @@ void Body::Update()
 	{
 	    SetNextUpdate(s_fUpdateDelta);
 	}
+
+	TrackBody("body", LTNULL);
+}
+
+// ----------------------------------------------------------------------- //
+//
+//	ROUTINE:	Body::TrackBody
+//
+//	PURPOSE:	With the server's AnimTrack variable on, tell the client
+//				about this body for the +DemoTrack file: a "body" line
+//				after each update and a "bodytouch" line for each touch.
+//				After the kind: name, server time, server frame time,
+//				position, body state, the main tracker's animation index
+//				and name, where it is in it and its length (ms), the MS_
+//				playback flags, and for a touch the object touched
+//				("world" for the main world) and its type.
+//
+// ----------------------------------------------------------------------- //
+
+void Body::TrackBody(const char* szKind, HOBJECT hOther)
+{
+	if ( !s_AnimTrack.IsInitted() )
+	{
+		s_AnimTrack.Init(g_pLTServer, "AnimTrack", LTNULL, 0.0f);
+	}
+
+	if ( s_AnimTrack.GetFloat(0.0f) == 0.0f ) return;
+
+	LTAnimTracker* pTracker = LTNULL;
+	HMODELANIM hAni = INVALID_MODEL_ANIM;
+	uint32 dwTime = 0, dwLength = 0, dwFlags = 0;
+	if ( LT_OK == g_pModelLT->GetMainTracker(m_hObject, pTracker) && pTracker )
+	{
+		g_pModelLT->GetCurAnim(pTracker, hAni);
+		g_pModelLT->GetCurAnimTime(pTracker, dwTime);
+		g_pModelLT->GetCurAnimLength(pTracker, dwLength);
+		g_pModelLT->GetPlaybackState(pTracker, dwFlags);
+	}
+
+	const char* szAni = g_pLTServer->GetAnimName(m_hObject, hAni);
+
+	LTVector vPos;
+	g_pLTServer->GetObjectPos(m_hObject, &vPos);
+
+	const char* szOther = "";
+	int nOtherType = -1;
+	if ( hOther )
+	{
+		szOther = IsMainWorld(hOther) ? "world" : g_pLTServer->GetObjectName(hOther);
+		nOtherType = (int)g_pLTServer->GetObjectType(hOther);
+	}
+
+	char szLine[384];
+	sprintf(szLine, "\"%s\",\"%.64s\",%.4f,%.4f,%.3f,%.3f,%.3f,%d,%d,\"%.48s\",%d,%d,%d,\"%.64s\",%d", szKind,
+		g_pLTServer->GetObjectName(m_hObject), g_pLTServer->GetTime(), g_pLTServer->GetFrameTime(),
+		vPos.x, vPos.y, vPos.z, (int)m_eBodyState, (int)hAni, szAni ? szAni : "",
+		(int)dwTime, (int)dwLength, (int)dwFlags, szOther ? szOther : "", nOtherType);
+
+	HSTRING hstrLine = g_pLTServer->CreateString(szLine);
+	HMESSAGEWRITE hMessage = g_pLTServer->StartMessage(LTNULL, MID_AI_TRACK);
+	g_pLTServer->WriteToMessageHString(hMessage, hstrLine);
+	g_pLTServer->EndMessage(hMessage);
+	g_pLTServer->FreeString(hstrLine);
 }
 
 // ----------------------------------------------------------------------- //
