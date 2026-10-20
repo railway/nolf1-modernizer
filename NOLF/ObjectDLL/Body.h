@@ -121,6 +121,7 @@ class Body : public Prop
 		void ReadProp(ObjectCreateStruct *pData);
 
 		void Update();
+		void TrackBody(const char* szKind, HOBJECT hOther);
 //		LTBOOL UpdateNormalDeath(LTFLOAT fTime);
 //		LTBOOL UpdateFreezeDeath(LTFLOAT fTime);
 //		LTBOOL UpdateVaporizeDeath(LTFLOAT fTime);
