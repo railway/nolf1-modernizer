@@ -1033,6 +1033,36 @@ void PressCommandFn(int argc, char **argv)
 	}
 }
 
+// MoveMouse <dx> <dy> [count]: moves the mouse by dx, dy counts, count
+// times (1 without), as a mouse does (SendInput): the view turns while playing,
+// and the window gets its mouse messages before the command returns. For measuring with +DemoCmds where the
+// cursor is when a folder comes up after the mouse moved while playing.
+
+void MoveMouseFn(int argc, char **argv)
+{
+	if (argc < 2) return;
+	int nCount = argc > 2 ? atoi(argv[2]) : 1;
+	INPUT input;
+	memset(&input, 0, sizeof(input));
+	input.type = INPUT_MOUSE;
+	input.mi.dwFlags = MOUSEEVENTF_MOVE;
+	for (int i = 0; i < nCount; i++)
+	{
+		input.mi.dx = atoi(argv[0]);
+		input.mi.dy = atoi(argv[1]);
+		SendInput(1, &input, sizeof(INPUT));
+	}
+
+	// The window gets the moves now, before the next command of the same frame
+	// (a PressKey that closes the folder they moved the cursor in).
+	MSG msg;
+	while (PeekMessage(&msg, NULL, WM_MOUSEFIRST, WM_MOUSELAST, PM_REMOVE))
+	{
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+}
+
 // PressKey <key> [count]: presses a key (its virtual-key code: 40 is the down
 // arrow) and lets it go, count times (1 without), as the interface gets keys
 // (CGameClientShell::OnKeyDown): in a folder, the next line of a list. In the
@@ -1966,6 +1996,7 @@ uint32 CGameClientShell::OnEngineInitialized(RMode *pMode, LTGUID *pAppGuid)
     g_pLTClient->RegisterConsoleProgram("Folder", FolderFn);
     g_pLTClient->RegisterConsoleProgram("PressCommand", PressCommandFn);
     g_pLTClient->RegisterConsoleProgram("PressKey", PressKeyFn);
+    g_pLTClient->RegisterConsoleProgram("MoveMouse", MoveMouseFn);
     g_pLTClient->RegisterConsoleProgram("Sunglass", SunglassFn);
     g_pLTClient->RegisterConsoleProgram("LeakFile", LeakFileFn);
 //  g_pLTClient->RegisterConsoleProgram("Connect", ConnectFn);
