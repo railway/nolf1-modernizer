@@ -514,6 +514,30 @@ void QuickLoadFn(int argc, char **argv)
 	}
 }
 
+// ScaleFX <name> <x> <y> <z> [dx dy dz]: shows the fx.txt ScaleFX of that name at
+// that point (LithTech units), as an impact shows its ScaleFX (CreateScaleFX, no
+// surface normal), its DirOffset along the direction (default straight up). For
+// measuring with +DemoCmds one sprite at a fixed place and time, without the
+// spread of a shot...
+
+void ScaleFXFn(int argc, char **argv)
+{
+	if (!g_pFXButeMgr || argc < 4) return;
+	CScaleFX* pScaleFX = g_pFXButeMgr->GetScaleFX(argv[0]);
+	if (!pScaleFX)
+	{
+		g_pLTClient->CPrint("ScaleFX: no ScaleFX %s", argv[0]);
+		return;
+	}
+	LTVector vPos((LTFLOAT)atof(argv[1]), (LTFLOAT)atof(argv[2]), (LTFLOAT)atof(argv[3]));
+	LTVector vDir(0.0f, 1.0f, 0.0f);
+	if (argc >= 7)
+	{
+		vDir.Init((LTFLOAT)atof(argv[4]), (LTFLOAT)atof(argv[5]), (LTFLOAT)atof(argv[6]));
+	}
+	g_pFXButeMgr->CreateScaleFX(pScaleFX, vPos, vDir, LTNULL, LTNULL);
+}
+
 void SavePoseFn(int argc, char **argv)
 {
 	if (g_pGameClientShell)
@@ -1993,6 +2017,7 @@ uint32 CGameClientShell::OnEngineInitialized(RMode *pMode, LTGUID *pAppGuid)
     g_pLTClient->RegisterConsoleProgram("Activate", ActivateFn);
     g_pLTClient->RegisterConsoleProgram("QuickSave", QuickSaveFn);
     g_pLTClient->RegisterConsoleProgram("QuickLoad", QuickLoadFn);
+    g_pLTClient->RegisterConsoleProgram("ScaleFX", ScaleFXFn);
     g_pLTClient->RegisterConsoleProgram("Folder", FolderFn);
     g_pLTClient->RegisterConsoleProgram("PressCommand", PressCommandFn);
     g_pLTClient->RegisterConsoleProgram("PressKey", PressKeyFn);
