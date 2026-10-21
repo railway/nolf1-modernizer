@@ -491,6 +491,29 @@ void ActivateFn(int argc, char **argv)
 	}
 }
 
+// QuickSave, QuickLoad: save and load the quick save as the QuickSave and QuickLoad keys do in a
+// single player game (COMMAND_ID_QUICKSAVE, COMMAND_ID_QUICKLOAD; not with an external camera, the
+// player dead or the zipcord pulling). For measuring with +DemoCmds what a load gives back of the
+// player's state, e.g. on a vehicle.
+
+void QuickSaveFn(int argc, char **argv)
+{
+	if (g_pGameClientShell && !g_pGameClientShell->IsUsingExternalCamera() &&
+		g_pGameClientShell->GetGameType() == SINGLE && !g_pGameClientShell->IsPlayerDead() &&
+		!g_pGameClientShell->GetMoveMgr()->IsZipCordOn())
+	{
+		g_pGameClientShell->QuickSave();
+	}
+}
+
+void QuickLoadFn(int argc, char **argv)
+{
+	if (g_pGameClientShell && g_pGameClientShell->GetGameType() == SINGLE)
+	{
+		g_pGameClientShell->QuickLoad();
+	}
+}
+
 void SavePoseFn(int argc, char **argv)
 {
 	if (g_pGameClientShell)
@@ -1882,6 +1905,8 @@ uint32 CGameClientShell::OnEngineInitialized(RMode *pMode, LTGUID *pAppGuid)
     g_pLTClient->RegisterConsoleProgram("ToggleFlashLight", ToggleFlashLightFn);
     g_pLTClient->RegisterConsoleProgram("Hold", HoldFn);
     g_pLTClient->RegisterConsoleProgram("Activate", ActivateFn);
+    g_pLTClient->RegisterConsoleProgram("QuickSave", QuickSaveFn);
+    g_pLTClient->RegisterConsoleProgram("QuickLoad", QuickLoadFn);
     g_pLTClient->RegisterConsoleProgram("Folder", FolderFn);
     g_pLTClient->RegisterConsoleProgram("Sunglass", SunglassFn);
     g_pLTClient->RegisterConsoleProgram("LeakFile", LeakFileFn);
