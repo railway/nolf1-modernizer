@@ -914,14 +914,70 @@ void FolderFn(int argc, char **argv)
 	}
 }
 
-// +DemoFolder's shots and quit, in the frame just drawn (CGameClientShell::Update)...
+// PressCommand <id>: presses the key of a command (CommandIDs.h) and lets it go,
+// for the commands the interface takes while playing (CGameClientShell::OnCommandOn
+// gives them to CInterfaceMgr::OnCommandOn first): PressCommand 78 is the inventory
+// key, which opens the inventory summary. For measuring with +DemoCmds...
+
+void PressCommandFn(int argc, char **argv)
+{
+	if (g_pGameClientShell && g_pInterfaceMgr && argc > 0 && g_pGameClientShell->IsPlayerInWorld() &&
+		!g_pGameClientShell->IsPlayerDead())
+	{
+		int nCommand = atoi(argv[0]);
+		g_pInterfaceMgr->OnCommandOn(nCommand);
+		g_pInterfaceMgr->OnCommandOff(nCommand);
+	}
+}
+
+// PressKey <key> [count]: presses a key (its virtual-key code: 40 is the down
+// arrow) and lets it go, count times (1 without), as the interface gets keys
+// (CGameClientShell::OnKeyDown): in a folder, the next line of a list. In the
+// same +DemoCmds second as the line that opens the folder, it runs in that frame...
+
+void PressKeyFn(int argc, char **argv)
+{
+	if (g_pInterfaceMgr && argc > 0)
+	{
+		int nKey = atoi(argv[0]);
+		int nCount = argc > 1 ? atoi(argv[1]) : 1;
+		for (int i = 0; i < nCount; i++)
+		{
+			g_pInterfaceMgr->OnKeyDown(nKey, 0);
+			g_pInterfaceMgr->OnKeyUp(nKey);
+		}
+	}
+}
+
+// +DemoFolder's shots and quit, in the frame just drawn (CGameClientShell::Update).
+// A folder up in the first world (the inventory key, PressCommand 78, Folder) has
+// paused the game, so its game time stands still: +DemoShotEvery's shots go on
+// there every s seconds of real time, the first in the folder's first frame, and
+// their names go on from the world's (the world's next shot then waits until its
+// game time reaches its name)...
+
+static LTFLOAT	s_fDemoWorldFolderShotTime	= -1.0f;	// real time of the last shot of a folder in a world
 
 static void UpdateDemoFolder()
 {
-	if (s_fDemoFolderTime < 0.0f || g_pInterfaceMgr->GetGameState() != GS_FOLDER) return;
+	if (g_pInterfaceMgr->GetGameState() != GS_FOLDER) return;
+	LTFLOAT fEvery = GetConsoleFloat("DemoShotEvery", 0.0f);
+	if (s_fDemoFolderTime < 0.0f)
+	{
+		LTFLOAT fNow = CWinUtil::GetTime();
+		if (fEvery > 0.0f && s_nDemoWorlds == 1 && g_pGameClientShell->IsInWorld() &&
+			(s_fDemoWorldFolderShotTime < 0.0f || fNow >= s_fDemoWorldFolderShotTime + fEvery))
+		{
+			char szFile[64];
+			DemoShotName(szFile, "demoshot", fEvery, s_nDemoShot);
+			SaveScreenBmp(szFile);
+			s_nDemoShot++;
+			s_fDemoWorldFolderShotTime = fNow;
+		}
+		return;
+	}
 	LTFLOAT fTime = CWinUtil::GetTime() - s_fDemoFolderTime;
 
-	LTFLOAT fEvery = GetConsoleFloat("DemoShotEvery", 0.0f);
 	if (fEvery > 0.0f && fTime >= fEvery * s_nDemoFolderShot)
 	{
 		char szFile[64];
@@ -1801,6 +1857,8 @@ uint32 CGameClientShell::OnEngineInitialized(RMode *pMode, LTGUID *pAppGuid)
     g_pLTClient->RegisterConsoleProgram("Objectives", ObjectivesFn);
     g_pLTClient->RegisterConsoleProgram("ToggleFlashLight", ToggleFlashLightFn);
     g_pLTClient->RegisterConsoleProgram("Folder", FolderFn);
+    g_pLTClient->RegisterConsoleProgram("PressCommand", PressCommandFn);
+    g_pLTClient->RegisterConsoleProgram("PressKey", PressKeyFn);
     g_pLTClient->RegisterConsoleProgram("Sunglass", SunglassFn);
     g_pLTClient->RegisterConsoleProgram("LeakFile", LeakFileFn);
 //  g_pLTClient->RegisterConsoleProgram("Connect", ConnectFn);
