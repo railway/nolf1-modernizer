@@ -28,6 +28,9 @@
 extern CMoveMgr* g_pMoveMgr;
 extern VarTrack g_vtMaxVehicleHeadCant;
 
+LTBOOL DemoHolding(int nCommand);			// GameClientShell.cpp, the Hold console command
+void DemoTrackLine(const char* pValues);	// GameClientShell.cpp, a line for the +DemoTrack file
+
 static LTBOOL s_bHolsteredWeapon = LTFALSE;
 
 VarTrack	g_vtMotorcycleInfoTrack;
@@ -452,48 +455,48 @@ void CVehicleMgr::UpdateMotorcycleControlFlags()
 {
 	// Determine what commands are currently on...
 
-	if (g_pLTClient->IsCommandOn(COMMAND_ID_RUN) ^ g_pInterfaceMgr->GetSettings()->RunLock())
+	if ((g_pLTClient->IsCommandOn(COMMAND_ID_RUN) || DemoHolding(COMMAND_ID_RUN)) ^ g_pInterfaceMgr->GetSettings()->RunLock())
 	{
 		m_dwControlFlags |= BC_CFLG_RUN;
 	}
 
-	if (g_pLTClient->IsCommandOn(COMMAND_ID_JUMP))
+	if (g_pLTClient->IsCommandOn(COMMAND_ID_JUMP) || DemoHolding(COMMAND_ID_JUMP))
 	{
 		m_dwControlFlags |= BC_CFLG_JUMP;
 	}
 
-	if (g_pLTClient->IsCommandOn(COMMAND_ID_FORWARD))
+	if (g_pLTClient->IsCommandOn(COMMAND_ID_FORWARD) || DemoHolding(COMMAND_ID_FORWARD))
 	{
 		m_dwControlFlags |= BC_CFLG_FORWARD;
 	}
 
-	if (g_pLTClient->IsCommandOn(COMMAND_ID_REVERSE))
+	if (g_pLTClient->IsCommandOn(COMMAND_ID_REVERSE) || DemoHolding(COMMAND_ID_REVERSE))
 	{
 		m_dwControlFlags |= BC_CFLG_REVERSE;
 		m_dwControlFlags &= ~BC_CFLG_FORWARD;
 	}
 
-	if (g_pLTClient->IsCommandOn(COMMAND_ID_LEFT))
+	if (g_pLTClient->IsCommandOn(COMMAND_ID_LEFT) || DemoHolding(COMMAND_ID_LEFT))
 	{
 		m_dwControlFlags |= BC_CFLG_LEFT;
 	}
 
-	if (g_pLTClient->IsCommandOn(COMMAND_ID_RIGHT))
+	if (g_pLTClient->IsCommandOn(COMMAND_ID_RIGHT) || DemoHolding(COMMAND_ID_RIGHT))
 	{
 		m_dwControlFlags |= BC_CFLG_RIGHT;
 	}
 
-	if (g_pLTClient->IsCommandOn(COMMAND_ID_STRAFE))
+	if (g_pLTClient->IsCommandOn(COMMAND_ID_STRAFE) || DemoHolding(COMMAND_ID_STRAFE))
 	{
 		m_dwControlFlags |= BC_CFLG_STRAFE;
 	}
 
-	if (g_pLTClient->IsCommandOn(COMMAND_ID_STRAFE_RIGHT))
+	if (g_pLTClient->IsCommandOn(COMMAND_ID_STRAFE_RIGHT) || DemoHolding(COMMAND_ID_STRAFE_RIGHT))
 	{
 		m_dwControlFlags |= BC_CFLG_STRAFE_RIGHT;
 	}
 
-	if (g_pLTClient->IsCommandOn(COMMAND_ID_STRAFE_LEFT))
+	if (g_pLTClient->IsCommandOn(COMMAND_ID_STRAFE_LEFT) || DemoHolding(COMMAND_ID_STRAFE_LEFT))
 	{
 		m_dwControlFlags |= BC_CFLG_STRAFE_LEFT;
 	}
@@ -653,6 +656,21 @@ void CVehicleMgr::UpdateVehicleGear()
 //
 // ----------------------------------------------------------------------- //
 
+// The animation the player-view vehicle model plays, for the +DemoTrack file...
+
+static const char* DemoVehicleAniName(HOBJECT hModel)
+{
+	static char* s_aNames[] = { "Select", "Deselect", "Idle_0", "Clutch", "Accellerate", "BrakeOn", "Fire" };
+	if (!hModel) return "";
+
+	uint32 dwAni = g_pLTClient->GetModelAnimation(hModel);
+	for (int i = 0; i < sizeof(s_aNames) / sizeof(s_aNames[0]); i++)
+	{
+		if (g_pLTClient->GetAnimIndex(hModel, s_aNames[i]) == dwAni) return s_aNames[i];
+	}
+	return "?";
+}
+
 void CVehicleMgr::UpdateSound()
 {
 	switch (m_ePPhysicsModel)
@@ -676,6 +694,25 @@ void CVehicleMgr::UpdateSound()
             g_pLTClient->KillSound(m_hVehicleImpactSnd);
             m_hVehicleImpactSnd = LTNULL;
 		}
+	}
+
+	// On a vehicle, its state for the +DemoTrack file each frame: [game time,
+	// "vehicle", physics model (1 motorcycle, 2 snowmobile), velocity x, y, z,
+	// base acceleration, gear, stopped, at max speed, turn direction (-1, 0, 1),
+	// the steering (m_fYawDiff) and this frame's turn (m_fYawDelta), the
+	// handlebars' roll and the camera's (all four in degrees), on the ground,
+	// the surface stood on, the player-view model's animation]...
+
+	if (m_ePPhysicsModel != PPM_NORMAL)
+	{
+		LTVector vVel = g_pMoveMgr->GetVelocity();
+		char szLine[300];
+		sprintf(szLine, "\"vehicle\",%d,%.2f,%.2f,%.2f,%.1f,%d,%d,%d,%d,%.3f,%.3f,%.3f,%.3f,%d,%d,\"%s\"",
+			(int)m_ePPhysicsModel, vVel.x, vVel.y, vVel.z, m_fVehicleBaseMoveAccel, m_nCurGear,
+			m_bVehicleStopped ? 1 : 0, m_bVehicleAtMaxSpeed ? 1 : 0, IsTurning() ? m_nVehicleTurnDirection : 0,
+			RAD2DEG(m_fYawDiff), RAD2DEG(m_fYawDelta), RAD2DEG(m_fHandlebarRoll), RAD2DEG(g_pGameClientShell->GetRoll()),
+			g_pMoveMgr->IsOnGround() ? 1 : 0, (int)m_eSurface, DemoVehicleAniName(m_hVehicleModel));
+		DemoTrackLine(szLine);
 	}
 }
 
@@ -2597,6 +2634,7 @@ void CVehicleMgr::OnTouchNotify(CollisionInfo *pInfo, float forceMag)
     g_pLTClient->GetRotationVectors(&rRot, &vU, &vR, &vF);
 
 	LTBOOL bHitCharacter = LTFALSE;
+	LTFLOAT fDemoCharacterDamage = 0.0f;	// for the +DemoTrack file
 
 	if (!bIsWorld && pInfo->m_hObject)
 	{
@@ -2614,6 +2652,7 @@ void CVehicleMgr::OnTouchNotify(CollisionInfo *pInfo, float forceMag)
 				LTFLOAT fDamRange = fMaxDamage - fDamage;
 
 				fDamage += (fDamRange * fVelPercent);
+				fDemoCharacterDamage = fDamage;
 
 				LTVector vPos;
 				g_pLTClient->GetObjectPos(pInfo->m_hObject, &vPos);
@@ -2702,6 +2741,17 @@ void CVehicleMgr::OnTouchNotify(CollisionInfo *pInfo, float forceMag)
 
 	fMinImpactAngle = fMinImpactAngle + (
 		(1.0f - fVelPercent) * (DEG2RAD(90.0f) - fMinImpactAngle));
+
+	// The touch for the +DemoTrack file: [game time, "vtouch", the world (1) or
+	// an object (0), the plane's normal x, y, z, the speed as a fraction of the
+	// most, the impact angle and the least one that counts (degrees), the damage
+	// sent to a character hit (0: none)]...
+
+	char szTouch[200];
+	sprintf(szTouch, "\"vtouch\",%d,%.3f,%.3f,%.3f,%.3f,%.2f,%.2f,%.1f", bIsWorld ? 1 : 0,
+		VEC_EXPAND(pInfo->m_Plane.m_Normal), fVelPercent, RAD2DEG(fImpactAngle), RAD2DEG(fMinImpactAngle),
+		fDemoCharacterDamage);
+	DemoTrackLine(szTouch);
 
 	// See if we hit hard enough to play a sound and do damage...
 
