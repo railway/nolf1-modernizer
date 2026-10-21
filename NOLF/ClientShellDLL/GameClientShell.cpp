@@ -422,6 +422,98 @@ void ToggleFlashLightFn(int argc, char **argv)
 	}
 }
 
+// Hold <key> [seconds]: holds a movement key down for that long in game time
+// (none: until the controls are next read, a single press), as the player's own
+// key does, on foot and on a vehicle: Forward, Reverse, Left, Right, Strafe,
+// StrafeLeft, StrafeRight, Jump or Run (not Duck: in single player the server
+// reads that one). For measuring with +DemoCmds; CMoveMgr and CVehicleMgr read
+// it through DemoHolding()...
+
+struct DemoHoldKey
+{
+	const char*	pName;
+	int			nCommand;
+};
+
+static const DemoHoldKey s_aDemoHoldKeys[] =
+{
+	{ "Forward",		COMMAND_ID_FORWARD },
+	{ "Reverse",		COMMAND_ID_REVERSE },
+	{ "Left",			COMMAND_ID_LEFT },
+	{ "Right",			COMMAND_ID_RIGHT },
+	{ "Strafe",			COMMAND_ID_STRAFE },
+	{ "StrafeLeft",		COMMAND_ID_STRAFE_LEFT },
+	{ "StrafeRight",	COMMAND_ID_STRAFE_RIGHT },
+	{ "Jump",			COMMAND_ID_JUMP },
+	{ "Run",			COMMAND_ID_RUN },
+};
+
+#define DEMO_HOLD_COMMANDS	(COMMAND_ID_LOOKDOWN + 1)
+
+static LTBOOL	s_abDemoHeld[DEMO_HOLD_COMMANDS];			// Hold was given for the key
+static LTFLOAT	s_afDemoHoldUntil[DEMO_HOLD_COMMANDS];		// game time the key is let go
+static LTBOOL	s_abDemoHoldPressed[DEMO_HOLD_COMMANDS];	// down until read once, however short the hold
+
+LTBOOL DemoHolding(int nCommand)
+{
+	if (nCommand < 0 || nCommand >= DEMO_HOLD_COMMANDS || !s_abDemoHeld[nCommand]) return LTFALSE;
+	LTBOOL bDown = s_abDemoHoldPressed[nCommand] || g_pLTClient->GetGameTime() <= s_afDemoHoldUntil[nCommand];
+	s_abDemoHoldPressed[nCommand] = LTFALSE;
+	return bDown;
+}
+
+void HoldFn(int argc, char **argv)
+{
+	if (argc < 1) return;
+	for (int i = 0; i < sizeof(s_aDemoHoldKeys) / sizeof(s_aDemoHoldKeys[0]); i++)
+	{
+		if (stricmp(argv[0], s_aDemoHoldKeys[i].pName) == 0)
+		{
+			int nCommand = s_aDemoHoldKeys[i].nCommand;
+			s_abDemoHeld[nCommand] = LTTRUE;
+			s_afDemoHoldUntil[nCommand] = g_pLTClient->GetGameTime() + (argc > 1 ? (LTFLOAT)atof(argv[1]) : 0.0f);
+			s_abDemoHoldPressed[nCommand] = LTTRUE;
+			return;
+		}
+	}
+	g_pLTClient->CPrint("Hold: no key %s", argv[0]);
+}
+
+// Activate: uses what the player faces, as a press of the Activate key does (a
+// door, a switch, a vehicle to ride; on a vehicle it gets off). For measuring
+// with +DemoCmds...
+
+void ActivateFn(int argc, char **argv)
+{
+	if (g_pGameClientShell)
+	{
+		g_pGameClientShell->DoActivate(LTFALSE);
+	}
+}
+
+// QuickSave, QuickLoad: save and load the quick save as the QuickSave and QuickLoad keys do in a
+// single player game (COMMAND_ID_QUICKSAVE, COMMAND_ID_QUICKLOAD; not with an external camera, the
+// player dead or the zipcord pulling). For measuring with +DemoCmds what a load gives back of the
+// player's state, e.g. on a vehicle.
+
+void QuickSaveFn(int argc, char **argv)
+{
+	if (g_pGameClientShell && !g_pGameClientShell->IsUsingExternalCamera() &&
+		g_pGameClientShell->GetGameType() == SINGLE && !g_pGameClientShell->IsPlayerDead() &&
+		!g_pGameClientShell->GetMoveMgr()->IsZipCordOn())
+	{
+		g_pGameClientShell->QuickSave();
+	}
+}
+
+void QuickLoadFn(int argc, char **argv)
+{
+	if (g_pGameClientShell && g_pGameClientShell->GetGameType() == SINGLE)
+	{
+		g_pGameClientShell->QuickLoad();
+	}
+}
+
 void SavePoseFn(int argc, char **argv)
 {
 	if (g_pGameClientShell)
@@ -490,6 +582,17 @@ void DemoTrackItem(const char* pKind, const char* pName, int nCount)
 	FILE* pFile = DemoTrackFile();
 	if (!pFile || !s_nDemoWorlds) return;
 	fprintf(pFile, "[%.4f,\"%s\",\"%s\",%d]\n", g_pLTClient->GetGameTime(), pKind, pName, nCount);
+	fflush(pFile);
+}
+
+// A line for the +DemoTrack file: [game time, <values>], the values a kind and
+// what follows it as JSON, e.g. CVehicleMgr's "vehicle" lines. Only in a world...
+
+void DemoTrackLine(const char* pValues)
+{
+	FILE* pFile = DemoTrackFile();
+	if (!pFile || !s_nDemoWorlds) return;
+	fprintf(pFile, "[%.4f,%s]\n", g_pLTClient->GetGameTime(), pValues);
 	fflush(pFile);
 }
 
@@ -1856,6 +1959,10 @@ uint32 CGameClientShell::OnEngineInitialized(RMode *pMode, LTGUID *pAppGuid)
     g_pLTClient->RegisterConsoleProgram("Fire", FireFn);
     g_pLTClient->RegisterConsoleProgram("Objectives", ObjectivesFn);
     g_pLTClient->RegisterConsoleProgram("ToggleFlashLight", ToggleFlashLightFn);
+    g_pLTClient->RegisterConsoleProgram("Hold", HoldFn);
+    g_pLTClient->RegisterConsoleProgram("Activate", ActivateFn);
+    g_pLTClient->RegisterConsoleProgram("QuickSave", QuickSaveFn);
+    g_pLTClient->RegisterConsoleProgram("QuickLoad", QuickLoadFn);
     g_pLTClient->RegisterConsoleProgram("Folder", FolderFn);
     g_pLTClient->RegisterConsoleProgram("PressCommand", PressCommandFn);
     g_pLTClient->RegisterConsoleProgram("PressKey", PressKeyFn);
