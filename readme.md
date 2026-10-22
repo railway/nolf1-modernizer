@@ -49,6 +49,7 @@ The goal of NOLF Modernizer is to help fix some long standing bugs, and update s
 
 The following are new config/console commands:
   - `FramerateLock`           - INT - Locks the framerate if the value is 1. (Default is 1)
+  - `FramerateLockRate`       - FLOAT - The frames a second `FramerateLock` locks to; multiplayer stays at 60. (Default is 60)
   - `ShowFramerate`           - INT - Displays the framerate if the value is 1. (Default is 0)
   - `OldMouseLook`            - INT - Uses the old mouse look code if the value is 1. (Default is 0)
   - `NoFunMenus`              - INT - Only displays the default main menu if the value is 1. (Default is 0)

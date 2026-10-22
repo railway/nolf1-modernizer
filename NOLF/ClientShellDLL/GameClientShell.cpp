@@ -170,6 +170,7 @@ VarTrack			g_vtPlayerName;
 
 // New!
 VarTrack			g_vtLockFPS;					// FramerateLock			<0-1>
+VarTrack			g_vtLockFPSRate;				// FramerateLockRate		<frames a second>
 VarTrack			g_vtShowFPS;					// ShowFramerate			<0-1>
 VarTrack			g_vtOldMouseLook;				// OldMouseLook				<0-1>
 VarTrack			g_vtNoFunMenus;					// NoFunMenus				<0-1>
@@ -1975,6 +1976,7 @@ uint32 CGameClientShell::OnEngineInitialized(RMode *pMode, LTGUID *pAppGuid)
 
 	// Init new console vars
 	g_vtLockFPS.Init(g_pLTClient, "FramerateLock", NULL, 1.0f);
+	g_vtLockFPSRate.Init(g_pLTClient, "FramerateLockRate", NULL, 60.0f);
 	g_vtShowFPS.Init(g_pLTClient, "ShowFramerate", NULL, 0.0f);
 	g_vtOldMouseLook.Init(g_pLTClient, "OldMouseLook", NULL, 0.0f);
 	g_vtNoFunMenus.Init(g_pLTClient, "NoFunMenus", NULL, 0.0f);
@@ -3092,13 +3094,20 @@ void CGameClientShell::PostUpdate()
 	{
 		// Limit our framerate so the game actually runs properly.
 		LARGE_INTEGER NewTime;
-		
+
+		// FramerateLockRate frames a second, 60 by default and always in multiplayer.
+		unsigned long lFrametime = m_lFrametime;
+		LTFLOAT fRate = g_vtLockFPSRate.GetFloat();
+		if (fRate > 0.0f && !IsMultiplayerGame()) {
+			lFrametime = (unsigned long)(m_lTimerFrequency.QuadPart / fRate);
+		}
+
 		while (1) {
 			//Sleep(0);
 
 			QueryPerformanceCounter(&NewTime);
 			unsigned long lTime = NewTime.QuadPart - m_lNextUpdate;
-			if (lTime > m_lFrametime) {
+			if (lTime > lFrametime) {
 				m_lNextUpdate = NewTime.QuadPart;
 				break;
 			}

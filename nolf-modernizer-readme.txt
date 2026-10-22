@@ -68,6 +68,7 @@ We've added new autoexec.cfg commands! (They also work in the console!)
 Some of these will show up in your autoexec.cfg as you set them, but if it's missing you can simply add it yourself.
 
 "FramerateLock"			    - Locks the framerate if the value is 1. (Default is 1)
+"FramerateLockRate"         - The frames a second FramerateLock locks to; multiplayer stays at 60. (Default is 60)
 "ShowFramerate"			    - Displays the framerate if the value is 1. (Default is 0)
 "OldMouseLook"			    - Uses the old mouse look code if the value is 1. (Default is 0)
 "NoFunMenus"			    - Only displays the default main menu if the value is 1. (Default is 0)
