@@ -1111,18 +1111,21 @@ void PressKeyFn(int argc, char **argv)
 // paused the game, so its game time stands still: +DemoShotEvery's shots go on
 // there every s seconds of real time, the first in the folder's first frame, and
 // their names go on from the world's (the world's next shot then waits until its
-// game time reaches its name)...
+// game time reaches its name). The mission failure screen (MissionFailed, or the
+// player's death) pauses the game too and is shot the same way...
 
 static LTFLOAT	s_fDemoWorldFolderShotTime	= -1.0f;	// real time of the last shot of a folder in a world
 
 static void UpdateDemoFolder()
 {
-	if (g_pInterfaceMgr->GetGameState() != GS_FOLDER) return;
+	GameState eState = g_pInterfaceMgr->GetGameState();
+	if (eState != GS_FOLDER && eState != GS_FAILURE) return;
 	LTFLOAT fEvery = GetConsoleFloat("DemoShotEvery", 0.0f);
 	if (s_fDemoFolderTime < 0.0f)
 	{
 		LTFLOAT fNow = CWinUtil::GetTime();
-		if (fEvery > 0.0f && s_nDemoWorlds == 1 && g_pGameClientShell->IsInWorld() &&
+		// (MissionFailed takes the player out of the world: SetPlayerNotInWorld.)
+		if (fEvery > 0.0f && s_nDemoWorlds == 1 && (g_pGameClientShell->IsInWorld() || eState == GS_FAILURE) &&
 			(s_fDemoWorldFolderShotTime < 0.0f || fNow >= s_fDemoWorldFolderShotTime + fEvery))
 		{
 			char szFile[64];
