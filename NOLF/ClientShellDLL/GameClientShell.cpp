@@ -7904,9 +7904,9 @@ void CGameClientShell::UpdateShots()
 		sprintf(s_szShotFile, "%.*s%s.bmp", pSlash ? (int)(pSlash - pFile + 1) : 0, pFile, pose.szName);
 
 		// The engine's clock at this shot, in shotclock.txt next to the shots. It
-		// starts with the world's load and its first frames' times hold the load's
-		// wall time, so it differs from run to run. A texture effect's sums (Pan on
-		// a sky's clouds) follow it...
+		// counts from the shell's start; with +runworld its first frames' times hold
+		// the world's load, so it differs from run to run, and a sky's Pan was
+		// measured to follow it...
 
 		char szClock[512];
 		sprintf(szClock, "%.*sshotclock.txt", pSlash ? (int)(pSlash - pFile + 1) : 0, pFile);
