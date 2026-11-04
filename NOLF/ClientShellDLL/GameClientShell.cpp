@@ -587,6 +587,20 @@ static FILE* DemoTrackFile()
 	return s_pDemoTrack;
 }
 
+// +ClockLog 1: prints the engine's clocks to the console from the world's load to
+// the first frame of pose shots, with what the frame was (+ErrorLog keeps them)...
+
+static LTBOOL	s_bClockLogDone		= LTFALSE;
+static int		s_nClockLogLines	= 0;
+
+static void ClockLog(const char* pWhen)
+{
+	if (s_bClockLogDone || s_nClockLogLines >= 2000 || GetConsoleFloat("ClockLog", 0.0f) == 0.0f) return;
+	s_nClockLogLines++;
+	g_pLTClient->CPrint("ClockLog %s time %.4f game %.4f frame %.4f", pWhen,
+		g_pLTClient->GetTime(), g_pLTClient->GetGameTime(), g_pLTClient->GetFrameTime());
+}
+
 // An event for the +DemoTrack file: [game time, kind, value], e.g. a command
 // going on ("on", id), off ("off", id) or a dialogue choice ("choice", n)...
 
@@ -2672,6 +2686,9 @@ void CGameClientShell::PreLoadWorld(char *pWorldName)
 	}
 
 	SAFE_STRCPY(m_strCurrentWorldName, pWorldName);
+
+	s_bClockLogDone = LTFALSE;
+	ClockLog("PreLoadWorld");
 }
 
 // ----------------------------------------------------------------------- //
@@ -2723,6 +2740,8 @@ void CGameClientShell::OnEnterWorld()
 
 	// Reset our retries!
 	m_nTimeoutBugRetriesLeft = MAX_TIMEOUT_RETRIES;
+
+	ClockLog("OnEnterWorld");
 
 	s_nShotPoses = -1;
 	s_fWorldEnterTime = g_pLTClient->GetGameTime();
@@ -2851,6 +2870,8 @@ void CGameClientShell::Update()
 		m_bForceDisconnect = LTFALSE;
 		return;
 	}
+
+	ClockLog("Update");
 
 	// Set up the time for this frame...
     m_fFrameTime = g_pLTClient->GetFrameTime();
@@ -7804,6 +7825,9 @@ void CGameClientShell::UpdateShots()
 
 	if (s_nShotPoses < 0)
 	{
+		ClockLog("FirstShotFrame");
+		s_bClockLogDone = LTTRUE;
+
 		char szWorld[256];
 		GetPoseWorldName(m_strCurrentWorldName, szWorld, sizeof(szWorld));
 
