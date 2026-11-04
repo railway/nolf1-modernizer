@@ -7903,6 +7903,20 @@ void CGameClientShell::UpdateShots()
 		if (!pSlash) pSlash = strrchr(pFile, '\\');
 		sprintf(s_szShotFile, "%.*s%s.bmp", pSlash ? (int)(pSlash - pFile + 1) : 0, pFile, pose.szName);
 
+		// The engine's clock at this shot, in shotclock.txt next to the shots. It
+		// starts with the world's load and its first frames' times hold the load's
+		// wall time, so it differs from run to run. A texture effect's sums (Pan on
+		// a sky's clouds) follow it...
+
+		char szClock[512];
+		sprintf(szClock, "%.*sshotclock.txt", pSlash ? (int)(pSlash - pFile + 1) : 0, pFile);
+		FILE* pClock = fopen(szClock, "a");
+		if (pClock)
+		{
+			fprintf(pClock, "%s %.4f\n", pose.szName, fTime);
+			fclose(pClock);
+		}
+
 		SDL_Log("ShotPoses: %s", s_szShotFile);
 		s_fShotTime = fTime + SHOT_POSE_DELAY;
 	}
@@ -10869,6 +10883,15 @@ void CGameClientShell::UpdateDemoTools()
 		DemoShotName(szFile, "demoshot", fEvery, s_nDemoShot);
 		SaveScreenBmp(szFile);
 		s_nDemoShot++;
+
+		// The engine's clock at this shot, as UpdateShots' shotclock.txt...
+
+		FILE* pClockTrack = DemoTrackFile();
+		if (pClockTrack)
+		{
+			fprintf(pClockTrack, "[%.4f,\"clock\",%.4f]\n", g_pLTClient->GetGameTime(), g_pLTClient->GetTime());
+			fflush(pClockTrack);
+		}
 	}
 
 	// +DemoTrack <file>: each frame at least 15 ms of game time after the last
