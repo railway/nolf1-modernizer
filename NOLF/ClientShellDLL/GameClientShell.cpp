@@ -768,6 +768,7 @@ static ShotPose	s_ShotPoses[MAX_SHOT_POSES];
 static int		s_nShotPoses	= -1;	// -1 until read for this world
 static int		s_nShot			= 0;	// the pose being photographed
 static LTFLOAT	s_fShotTime		= 0.0f;	// when to take its shot
+static LTFLOAT	s_fLoadClock	= 0.0f;	// the engine's clock when the last world began to load (DoLoadWorld), what a panning surface counts from
 static char		s_szShotFile[512];		// where this frame goes, if it's a shot
 
 static LTBOOL IsShooting()
@@ -7445,6 +7446,8 @@ LTBOOL CGameClientShell::DoLoadWorld(char* pWorldFile, char* pCurWorldSaveFile,
 {
     if (!pWorldFile) return LTFALSE;
 
+	s_fLoadClock = g_pLTClient->GetTime();
+
 	// A mission started with +DemoMission records from its first world...
 
 	char szRecord[256];
@@ -7934,17 +7937,18 @@ void CGameClientShell::UpdateShots()
 		if (!pSlash) pSlash = strrchr(pFile, '\\');
 		sprintf(s_szShotFile, "%.*s%s.bmp", pSlash ? (int)(pSlash - pFile + 1) : 0, pFile, pose.szName);
 
-		// The engine's clock at this shot, in shotclock.txt next to the shots. It
-		// counts from the shell's start; with +runworld its first frames' times hold
-		// the world's load, so it differs from run to run, and a sky's Pan was
-		// measured to follow it...
+		// The engine's clock at this shot, in shotclock.txt next to the shots, counted
+		// from when the world began to load (s_fLoadClock). The clock itself counts
+		// from the shell's start; a sky's Pan was measured to follow it from the load
+		// on, whatever the shell did before (a main menu shown first): the load's
+		// time is in it, so it differs from run to run...
 
 		char szClock[512];
 		sprintf(szClock, "%.*sshotclock.txt", pSlash ? (int)(pSlash - pFile + 1) : 0, pFile);
 		FILE* pClock = fopen(szClock, "a");
 		if (pClock)
 		{
-			fprintf(pClock, "%s %.4f\n", pose.szName, fTime);
+			fprintf(pClock, "%s %.4f\n", pose.szName, fTime - s_fLoadClock);
 			fclose(pClock);
 		}
 
@@ -10934,7 +10938,7 @@ void CGameClientShell::UpdateDemoTools()
 		FILE* pClockTrack = DemoTrackFile();
 		if (pClockTrack)
 		{
-			fprintf(pClockTrack, "[%.4f,\"clock\",%.4f]\n", g_pLTClient->GetGameTime(), g_pLTClient->GetTime());
+			fprintf(pClockTrack, "[%.4f,\"clock\",%.4f]\n", g_pLTClient->GetGameTime(), g_pLTClient->GetTime() - s_fLoadClock);
 			fflush(pClockTrack);
 		}
 	}
