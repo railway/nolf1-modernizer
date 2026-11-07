@@ -152,9 +152,9 @@ Tested with the Game of the Year CDs and Wine 11. The InstallShield installer an
 
    Drop `+windowed 1` for fullscreen. Settings and saves live in the game directory (`autoexec.cfg`, `Save/`), and Modernizer writes a `Debug.log` there that's worth checking if something goes wrong.
 
-### Pose shots (comparing with a port)
+### Pose shots (comparing renderings)
 
-For holding the original's rendering against a port's, the same camera poses can be photographed in both:
+For comparing the game's rendering between builds, the same camera poses can be photographed in each:
 
 - `SavePose [name]` (console, `~`) appends the camera's pose to `poses.txt` in the game directory: `name world x y z pitch yaw`, world units and degrees, world like `worlds/m01s01`. Unnamed poses are `<world>_<line>`. Fly around with `mpclip` (typed into the console).
 - `+ShotPoses <file>` with `+runworld <world>` photographs the world's poses of that file and quits: `<name>.bmp` next to the file, square pixels 90 degrees across a 4:3 screen (wider across on a wider one, as the game's view), without interface, weapon or player. `+ShotDelay <seconds>` (default 3) is the wait after the level starts. `+ShotWeapon <weapon>` (a weapons.txt name, like `P38`) keeps the player view model in the shots, with that weapon drawn (every weapon is given, as by the full weapons cheat). `+ShotFovX <degrees>` takes them through the field of view the game itself sets at that FovX instead: 90 is the normal view (FovY 78, so not square pixels), 20, 7 and 2 the scope's zoom levels. `shotclock.txt` next to the shots has a line `<name> <seconds>` for each: the engine's clock at that shot, which counts from the shell's start. With `+runworld` that includes the world's load, so it differs from run to run, and a sky's panning texture was measured to follow it.

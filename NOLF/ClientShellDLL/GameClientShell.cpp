@@ -7758,7 +7758,7 @@ LTBOOL CGameClientShell::EnableJoystick()
 //	ROUTINE:	CGameClientShell::SavePose()
 //
 //	PURPOSE:	Append the camera's pose to poses.txt (SavePose [name]),
-//				for comparing the game's rendering with a port's: one line
+//				for comparing the game's rendering between builds: one line
 //				"name world x y z pitch yaw", angles in degrees.
 //
 // ----------------------------------------------------------------------- //
@@ -10915,7 +10915,7 @@ const char *CGameClientShell::GetDisconnectMsg()
 //				(demoshot_<seconds>_<milliseconds>.bmp when s isn't whole);
 //				+DemoQuit <s> quits after s seconds of game time in the world, so a recording ends
 //				cleanly; +DemoTrack <file> writes what the player sees and does
-//				(JSON lines), for replaying it in a port.
+//				(JSON lines), for replaying the run.
 //
 // ----------------------------------------------------------------------- //
 
