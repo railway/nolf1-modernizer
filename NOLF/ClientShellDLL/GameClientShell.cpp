@@ -7917,6 +7917,20 @@ void CGameClientShell::UpdateShots()
 			fclose(pClock);
 		}
 
+		// The game time in the world at this shot, as +DemoCmds and +DemoQuit count
+		// it, in shotgametime.txt next to the shots, a file of its own so that readers
+		// of shotclock.txt see it unchanged. The shots are timed on the engine's
+		// clock, and a shot was measured to fall about a quarter second later in game
+		// time than +ShotDelay and the half seconds since say...
+
+		sprintf(szClock, "%.*sshotgametime.txt", pSlash ? (int)(pSlash - pFile + 1) : 0, pFile);
+		pClock = fopen(szClock, "a");
+		if (pClock)
+		{
+			fprintf(pClock, "%s %.4f\n", pose.szName, g_pLTClient->GetGameTime() - s_fWorldEnterTime);
+			fclose(pClock);
+		}
+
 		SDL_Log("ShotPoses: %s", s_szShotFile);
 		s_fShotTime = fTime + SHOT_POSE_DELAY;
 	}
