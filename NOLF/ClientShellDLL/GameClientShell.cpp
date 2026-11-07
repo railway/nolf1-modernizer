@@ -7906,18 +7906,28 @@ void CGameClientShell::UpdateShots()
 		// The engine's clock at this shot, in shotclock.txt next to the shots. It
 		// counts from the shell's start; with +runworld its first frames' times hold
 		// the world's load, so it differs from run to run, and a sky's Pan was
-		// measured to follow it. The third column is the game time in the world at
-		// this shot, as +DemoCmds and +DemoQuit count it: the shots are timed on the
-		// engine's clock, and a shot was measured to fall a quarter second later in
-		// game time than +ShotDelay and the half seconds since say...
+		// measured to follow it...
 
 		char szClock[512];
 		sprintf(szClock, "%.*sshotclock.txt", pSlash ? (int)(pSlash - pFile + 1) : 0, pFile);
 		FILE* pClock = fopen(szClock, "a");
 		if (pClock)
 		{
-			fprintf(pClock, "%s %.4f %.4f\n", pose.szName, fTime,
-				g_pLTClient->GetGameTime() - s_fWorldEnterTime);
+			fprintf(pClock, "%s %.4f\n", pose.szName, fTime);
+			fclose(pClock);
+		}
+
+		// The game time in the world at this shot, as +DemoCmds and +DemoQuit count
+		// it, in shotgametime.txt next to the shots, a file of its own so that readers
+		// of shotclock.txt see it unchanged. The shots are timed on the engine's
+		// clock, and a shot was measured to fall about a quarter second later in game
+		// time than +ShotDelay and the half seconds since say...
+
+		sprintf(szClock, "%.*sshotgametime.txt", pSlash ? (int)(pSlash - pFile + 1) : 0, pFile);
+		pClock = fopen(szClock, "a");
+		if (pClock)
+		{
+			fprintf(pClock, "%s %.4f\n", pose.szName, g_pLTClient->GetGameTime() - s_fWorldEnterTime);
 			fclose(pClock);
 		}
 
