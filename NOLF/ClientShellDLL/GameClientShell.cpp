@@ -768,6 +768,7 @@ static ShotPose	s_ShotPoses[MAX_SHOT_POSES];
 static int		s_nShotPoses	= -1;	// -1 until read for this world
 static int		s_nShot			= 0;	// the pose being photographed
 static LTFLOAT	s_fShotTime		= 0.0f;	// when to take its shot
+static LTFLOAT	s_fLoadClock	= 0.0f;	// the engine's clock when the last world began to load (DoLoadWorld), what a panning surface counts from
 static char		s_szShotFile[512];		// where this frame goes, if it's a shot
 
 static LTBOOL IsShooting()
@@ -1117,10 +1118,38 @@ void PressKeyFn(int argc, char **argv)
 
 static LTFLOAT	s_fDemoWorldFolderShotTime	= -1.0f;	// real time of the last shot of a folder in a world
 
+// +DemoStartDelay <s> with +DemoMission: the main menu shows for s seconds of real
+// time (from the interface's start) before the mission starts, as it does when a
+// player gets through the menus to a mission. The engine's clock then holds the
+// time in the shell before the world, as in a take through the menus...
+
+static LTFLOAT	s_fDemoStartAt		= -1.0f;	// real time the mission starts, -1 without
+static int		s_nDemoStartMission	= -1;
+static char		s_szDemoStartWorld[256] = "";	// +runworld's, when the mission's later world starts
+
+static LTBOOL StartDemoMission(int nMission, char* pRunWorld, LTBOOL bOutfit)
+{
+	g_pInterfaceMgr->GetMissionData()->NewMission(nMission);
+	g_pInterfaceMgr->GetPlayerStats()->PrepareInventory();
+	g_pInterfaceMgr->GetFolderMgr()->SkipOutfitting();
+	g_pInterfaceMgr->SwitchToFolder(FOLDER_ID_INVENTORY);
+	CBaseFolder* pInventory = g_pInterfaceMgr->GetFolderMgr()->GetFolderFromID(FOLDER_ID_INVENTORY);
+	return bOutfit ? g_pGameClientShell->LoadWorld(pRunWorld) : (pInventory && pInventory->OnCommand(FOLDER_CMD_CONTINUE, 0, 0));
+}
+
 static void UpdateDemoFolder()
 {
 	GameState eState = g_pInterfaceMgr->GetGameState();
 	if (eState != GS_FOLDER && eState != GS_FAILURE) return;
+	if (s_fDemoStartAt >= 0.0f && eState == GS_FOLDER && CWinUtil::GetTime() >= s_fDemoStartAt)
+	{
+		s_fDemoStartAt = -1.0f;
+		if (!StartDemoMission(s_nDemoStartMission, s_szDemoStartWorld, s_bDemoOutfit))
+		{
+			g_pLTClient->ShutdownWithMessage("Can't start the mission");
+		}
+		return;
+	}
 	LTFLOAT fEvery = GetConsoleFloat("DemoShotEvery", 0.0f);
 	if (s_fDemoFolderTime < 0.0f)
 	{
@@ -2322,15 +2351,18 @@ uint32 CGameClientShell::OnEngineInitialized(RMode *pMode, LTGUID *pAppGuid)
 			}
 			s_fDemoFolderTime = CWinUtil::GetTime();
 		}
+        else if (pDemoMission && GetConsoleFloat("DemoStartDelay", 0.0f) > 0.0f)
+		{
+			if (pRecordDemo && pRecordDemo[0]) SAFE_STRCPY(s_szDemoRecordPending, pRecordDemo);
+			s_nDemoStartMission = nDemoMission;
+			SAFE_STRCPY(s_szDemoStartWorld, pRunWorld);
+			s_fDemoStartAt = CWinUtil::GetTime() + GetConsoleFloat("DemoStartDelay", 0.0f);
+			m_InterfaceMgr.SwitchToFolder(g_pInterfaceMgr->GetMainFolder());
+		}
         else if (pDemoMission)
 		{
 			if (pRecordDemo && pRecordDemo[0]) SAFE_STRCPY(s_szDemoRecordPending, pRecordDemo);
-			m_InterfaceMgr.GetMissionData()->NewMission(nDemoMission);
-			m_InterfaceMgr.GetPlayerStats()->PrepareInventory();
-			m_InterfaceMgr.GetFolderMgr()->SkipOutfitting();
-			m_InterfaceMgr.SwitchToFolder(FOLDER_ID_INVENTORY);
-			CBaseFolder* pInventory = m_InterfaceMgr.GetFolderMgr()->GetFolderFromID(FOLDER_ID_INVENTORY);
-			if (s_bDemoOutfit ? !LoadWorld(pRunWorld) : (!pInventory || !pInventory->OnCommand(FOLDER_CMD_CONTINUE, 0, 0)))
+			if (!StartDemoMission(nDemoMission, pRunWorld, s_bDemoOutfit))
 			{
                 g_pLTClient->ShutdownWithMessage("Can't start the mission");
 				return LT_ERROR;
@@ -7414,6 +7446,8 @@ LTBOOL CGameClientShell::DoLoadWorld(char* pWorldFile, char* pCurWorldSaveFile,
 {
     if (!pWorldFile) return LTFALSE;
 
+	s_fLoadClock = g_pLTClient->GetTime();
+
 	// A mission started with +DemoMission records from its first world...
 
 	char szRecord[256];
@@ -7903,17 +7937,18 @@ void CGameClientShell::UpdateShots()
 		if (!pSlash) pSlash = strrchr(pFile, '\\');
 		sprintf(s_szShotFile, "%.*s%s.bmp", pSlash ? (int)(pSlash - pFile + 1) : 0, pFile, pose.szName);
 
-		// The engine's clock at this shot, in shotclock.txt next to the shots. It
-		// counts from the shell's start; with +runworld its first frames' times hold
-		// the world's load, so it differs from run to run, and a sky's Pan was
-		// measured to follow it...
+		// The engine's clock at this shot, in shotclock.txt next to the shots, counted
+		// from when the world began to load (s_fLoadClock). The clock itself counts
+		// from the shell's start; a sky's Pan was measured to follow it from the load
+		// on, whatever the shell did before (a main menu shown first): the load's
+		// time is in it, so it differs from run to run...
 
 		char szClock[512];
 		sprintf(szClock, "%.*sshotclock.txt", pSlash ? (int)(pSlash - pFile + 1) : 0, pFile);
 		FILE* pClock = fopen(szClock, "a");
 		if (pClock)
 		{
-			fprintf(pClock, "%s %.4f\n", pose.szName, fTime);
+			fprintf(pClock, "%s %.4f\n", pose.szName, fTime - s_fLoadClock);
 			fclose(pClock);
 		}
 
@@ -10903,7 +10938,7 @@ void CGameClientShell::UpdateDemoTools()
 		FILE* pClockTrack = DemoTrackFile();
 		if (pClockTrack)
 		{
-			fprintf(pClockTrack, "[%.4f,\"clock\",%.4f]\n", g_pLTClient->GetGameTime(), g_pLTClient->GetTime());
+			fprintf(pClockTrack, "[%.4f,\"clock\",%.4f]\n", g_pLTClient->GetGameTime(), g_pLTClient->GetTime() - s_fLoadClock);
 			fflush(pClockTrack);
 		}
 	}
