@@ -7966,6 +7966,19 @@ void CGameClientShell::UpdateShots()
 			fclose(pClock);
 		}
 
+		// The engine's clock itself at this shot, from the shell's start, in
+		// shotshellclock.txt: what the light waves read (CLightFX::UpdateLightRadius
+		// and UpdateLightIntensity take GetTime() as their phase), where Pan counts
+		// from the load. A main menu before the world puts the two apart by its time.
+
+		sprintf(szClock, "%.*sshotshellclock.txt", pSlash ? (int)(pSlash - pFile + 1) : 0, pFile);
+		pClock = fopen(szClock, "a");
+		if (pClock)
+		{
+			fprintf(pClock, "%s %.4f\n", pose.szName, fTime);
+			fclose(pClock);
+		}
+
 		SDL_Log("ShotPoses: %s", s_szShotFile);
 		s_fShotTime = fTime + SHOT_POSE_DELAY;
 	}
@@ -10939,6 +10952,10 @@ void CGameClientShell::UpdateDemoTools()
 		if (pClockTrack)
 		{
 			fprintf(pClockTrack, "[%.4f,\"clock\",%.4f]\n", g_pLTClient->GetGameTime(), g_pLTClient->GetTime() - s_fLoadClock);
+
+			// And the engine's clock itself, as UpdateShots' shotshellclock.txt...
+
+			fprintf(pClockTrack, "[%.4f,\"shellclock\",%.4f]\n", g_pLTClient->GetGameTime(), g_pLTClient->GetTime());
 			fflush(pClockTrack);
 		}
 	}
