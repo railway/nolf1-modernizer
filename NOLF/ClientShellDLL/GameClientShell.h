@@ -71,6 +71,7 @@ class CGameClientShell : public IClientShell
 		void  HandleCheat(int argc, char **argv);
 		void  HandleExitLevel(int argc, char **argv);
 		void  HandleToggleFlashLight();
+		void  HandleToggleZoom();
 
 		void  ExitLevel();
 

@@ -423,6 +423,16 @@ void ToggleFlashLightFn(int argc, char **argv)
 	}
 }
 
+// ToggleZoom: presses the scope's toggle-zoom command, including its normal
+// transition lockout. For measuring scope masks and zoom timing with +DemoCmds.
+void ToggleZoomFn(int argc, char **argv)
+{
+	if (g_pGameClientShell)
+	{
+		g_pGameClientShell->HandleToggleZoom();
+	}
+}
+
 // Hold <key> [seconds]: holds a movement key down for that long in game time
 // (none: until the controls are next read, a single press), as the player's own
 // key does, on foot and on a vehicle: Forward, Reverse, Left, Right, Strafe,
@@ -2047,6 +2057,7 @@ uint32 CGameClientShell::OnEngineInitialized(RMode *pMode, LTGUID *pAppGuid)
     g_pLTClient->RegisterConsoleProgram("Fire", FireFn);
     g_pLTClient->RegisterConsoleProgram("Objectives", ObjectivesFn);
     g_pLTClient->RegisterConsoleProgram("ToggleFlashLight", ToggleFlashLightFn);
+    g_pLTClient->RegisterConsoleProgram("ToggleZoom", ToggleZoomFn);
     g_pLTClient->RegisterConsoleProgram("Hold", HoldFn);
     g_pLTClient->RegisterConsoleProgram("Activate", ActivateFn);
     g_pLTClient->RegisterConsoleProgram("QuickSave", QuickSaveFn);
@@ -6203,6 +6214,12 @@ void CGameClientShell::HandleRecord(int argc, char **argv)
 void CGameClientShell::HandleToggleFlashLight()
 {
 	OnCommandOn(COMMAND_ID_FLASHLIGHT);
+}
+
+void CGameClientShell::HandleToggleZoom()
+{
+	OnCommandOn(COMMAND_ID_TOGGLE_ZOOM);
+	OnCommandOff(COMMAND_ID_TOGGLE_ZOOM);
 }
 
 void CGameClientShell::HandlePlaydemo(int argc, char **argv)
