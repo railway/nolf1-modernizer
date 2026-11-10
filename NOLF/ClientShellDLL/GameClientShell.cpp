@@ -429,8 +429,7 @@ void ToggleZoomFn(int argc, char **argv)
 {
 	if (g_pGameClientShell)
 	{
-		g_pGameClientShell->OnCommandOn(COMMAND_ID_TOGGLE_ZOOM);
-		g_pGameClientShell->OnCommandOff(COMMAND_ID_TOGGLE_ZOOM);
+		g_pGameClientShell->HandleToggleZoom();
 	}
 }
 
@@ -6215,6 +6214,12 @@ void CGameClientShell::HandleRecord(int argc, char **argv)
 void CGameClientShell::HandleToggleFlashLight()
 {
 	OnCommandOn(COMMAND_ID_FLASHLIGHT);
+}
+
+void CGameClientShell::HandleToggleZoom()
+{
+	OnCommandOn(COMMAND_ID_TOGGLE_ZOOM);
+	OnCommandOff(COMMAND_ID_TOGGLE_ZOOM);
 }
 
 void CGameClientShell::HandlePlaydemo(int argc, char **argv)
