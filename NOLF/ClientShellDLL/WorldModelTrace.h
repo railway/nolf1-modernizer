@@ -13,6 +13,7 @@ typedef void (__cdecl *CollectFn)(void*);
 typedef void (__cdecl *DrawFn)(void*, void*);
 static CollectFn s_Collect = NULL;
 static DrawFn s_Draw = NULL;
+static DrawFn s_AddDraw = NULL;
 static unsigned char* s_Module = NULL;
 static bool s_Attempted = false;
 static bool s_Active = false;
@@ -21,7 +22,8 @@ static bool s_Active = false;
 // RVAs identify the world-model collector, translucent draw wrapper, frame code and list.
 // These are observation points, not replacement renderer code.
 static const unsigned COLLECT_RVA = 0x64b70;
-static const unsigned DRAW_RVA = 0x68910;
+static const unsigned DRAW_RVA = 0x66f00;
+static const unsigned ADD_DRAW_RVA = 0x68910;
 static const unsigned FRAME_RVA = 0x8bea4;
 static const unsigned LIST_COUNT_RVA = 0x91c18;
 
@@ -74,6 +76,12 @@ static void __cdecl Draw(void* state, void* object)
 	s_Draw(state, object);
 }
 
+static void __cdecl AddDraw(void* state, void* object)
+{
+	Record('A', object, _ReturnAddress());
+	s_AddDraw(state, object);
+}
+
 static bool SupportedRenderer(HMODULE module)
 {
 	char path[MAX_PATH];
@@ -109,12 +117,14 @@ static bool Install()
 	s_Module = reinterpret_cast<unsigned char*>(module);
 	s_Collect = reinterpret_cast<CollectFn>(s_Module + COLLECT_RVA);
 	s_Draw = reinterpret_cast<DrawFn>(s_Module + DRAW_RVA);
+	s_AddDraw = reinterpret_cast<DrawFn>(s_Module + ADD_DRAW_RVA);
 	LONG result = DetourTransactionBegin();
 	if (result == NO_ERROR)
 	{
 		result = DetourUpdateThread(GetCurrentThread());
 		if (result == NO_ERROR) result = DetourAttach(reinterpret_cast<PVOID*>(&s_Collect), Collect);
 		if (result == NO_ERROR) result = DetourAttach(reinterpret_cast<PVOID*>(&s_Draw), Draw);
+		if (result == NO_ERROR) result = DetourAttach(reinterpret_cast<PVOID*>(&s_AddDraw), AddDraw);
 		if (result == NO_ERROR) result = DetourTransactionCommit();
 		else DetourTransactionAbort();
 	}
@@ -122,10 +132,11 @@ static bool Install()
 	{
 		s_Collect = NULL;
 		s_Draw = NULL;
+		s_AddDraw = NULL;
 		g_pLTClient->CPrint("WMTRACE install failed %ld; no hooks installed", result);
 		return false;
 	}
-	g_pLTClient->CPrint("WMTRACE installed base=%p collector=%x draw=%x", module, COLLECT_RVA, DRAW_RVA);
+	g_pLTClient->CPrint("WMTRACE installed base=%p collector=%x draw=%x additive=%x", module, COLLECT_RVA, DRAW_RVA, ADD_DRAW_RVA);
 	return true;
 }
 
@@ -164,6 +175,7 @@ static void Shutdown()
 		result = DetourUpdateThread(GetCurrentThread());
 		if (result == NO_ERROR) result = DetourDetach(reinterpret_cast<PVOID*>(&s_Collect), Collect);
 		if (result == NO_ERROR) result = DetourDetach(reinterpret_cast<PVOID*>(&s_Draw), Draw);
+		if (result == NO_ERROR) result = DetourDetach(reinterpret_cast<PVOID*>(&s_AddDraw), AddDraw);
 		if (result == NO_ERROR) result = DetourTransactionCommit();
 		else DetourTransactionAbort();
 	}
