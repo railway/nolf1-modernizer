@@ -7871,7 +7871,7 @@ void CGameClientShell::SavePose(const char* pName)
 // +ShotLightPoints <file> records lighting without changing it. Lines are
 // <pose name> <x> <y> <z>; only the current pose's points are sampled. The
 // nearest character's position, colour and sample distinguish table lighting
-// from the model's own tint. SDL's log retains the measurements after quitting.
+// from the model's own tint. ErrorLog retains the console output after quitting.
 static void TraceShotLight(const char* poseName, CSpecialFXList* characters)
 {
 	HCONSOLEVAR option = g_pLTClient->GetConsoleVar("ShotLightPoints");
@@ -7880,7 +7880,7 @@ static void TraceShotLight(const char* poseName, CSpecialFXList* characters)
 	FILE* points = fopen(path, "r");
 	if (!points)
 	{
-		SDL_Log("ShotLightPoints: cannot open %s", path);
+		g_pLTClient->CPrint("ShotLightPoints: cannot open %s", path);
 		return;
 	}
 
@@ -7888,7 +7888,7 @@ static void TraceShotLight(const char* poseName, CSpecialFXList* characters)
 	g_pLTClient->GetGlobalLightScale(&scale);
 	float ambient = 0.0f;
 	LTRESULT ambientResult = g_pLTClient->GetAmbientLight(ambient);
-	SDL_Log("ShotLightPoints: %s global %.9f %.9f %.9f ambient %d %.9f",
+	g_pLTClient->CPrint("ShotLightPoints: %s global %.9f %.9f %.9f ambient %d %.9f",
 		poseName, scale.x, scale.y, scale.z, ambientResult, ambient);
 
 	char line[256], name[64];
@@ -7899,7 +7899,7 @@ static void TraceShotLight(const char* poseName, CSpecialFXList* characters)
 			strcmp(name, poseName)) continue;
 		LTVector shade(0.0f, 0.0f, 0.0f);
 		LTRESULT result = g_pLTClient->GetPointShade(&point, &shade);
-		SDL_Log("ShotLightPoints: %s point %.9f %.9f %.9f shade %d %.9f %.9f %.9f",
+		g_pLTClient->CPrint("ShotLightPoints: %s point %.9f %.9f %.9f shade %d %.9f %.9f %.9f",
 			poseName, point.x, point.y, point.z, result, shade.x, shade.y, shade.z);
 
 		HLOCALOBJ nearest = LTNULL;
@@ -7921,7 +7921,7 @@ static void TraceShotLight(const char* poseName, CSpecialFXList* characters)
 		}
 		if (!nearest)
 		{
-			SDL_Log("ShotLightPoints: %s no character", poseName);
+			g_pLTClient->CPrint("ShotLightPoints: %s no character", poseName);
 			continue;
 		}
 		LTVector position;
@@ -7929,7 +7929,7 @@ static void TraceShotLight(const char* poseName, CSpecialFXList* characters)
 		g_pLTClient->GetObjectPos(nearest, &position);
 		g_pLTClient->GetObjectColor(nearest, &red, &green, &blue, &alpha);
 		result = g_pLTClient->GetPointShade(&position, &shade);
-		SDL_Log("ShotLightPoints: %s character %.9f %.9f %.9f distance2 %.9f shade %d %.9f %.9f %.9f tint %.9f %.9f %.9f %.9f flags %u",
+		g_pLTClient->CPrint("ShotLightPoints: %s character %.9f %.9f %.9f distance2 %.9f shade %d %.9f %.9f %.9f tint %.9f %.9f %.9f %.9f flags %u",
 			poseName, position.x, position.y, position.z, distanceSquared, result,
 			shade.x, shade.y, shade.z, red, green, blue, alpha,
 			g_pLTClient->GetObjectFlags(nearest));
