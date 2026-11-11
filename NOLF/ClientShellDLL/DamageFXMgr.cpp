@@ -313,6 +313,19 @@ void CDamageFXMgr::GetFOVOffsets(LTFLOAT& horizontal, LTFLOAT& vertical) const
 	}
 }
 
+// Raw state for opt-in damage-effect photographs: poison angles and movement
+// multiplier, stun brightness, sleep angle/darkening, and poison roll.
+void CDamageFXMgr::GetDebugState(LTFLOAT values[7]) const
+{
+	values[0] = m_fFOVXOffset;
+	values[1] = m_fFOVYOffset;
+	values[2] = m_fMoveMult;
+	values[3] = m_vStunColor.x;
+	values[4] = m_fSleepFOVOffset;
+	values[5] = m_fSleepDark;
+	values[6] = m_fOffsetRot;
+}
+
 void CDamageFXMgr::StartBleedingFX()
 {
 	if (!m_bBleeding)

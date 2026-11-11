@@ -33,6 +33,7 @@ public:
 	void Update();
 	void Clear();
 	void GetFOVOffsets(LTFLOAT& horizontal, LTFLOAT& vertical) const;
+	void GetDebugState(LTFLOAT values[7]) const;
 
 	void StartBleedingFX();
     void StopBleedingFX(LTBOOL bFade = LTTRUE);
