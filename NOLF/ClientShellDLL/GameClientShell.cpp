@@ -3092,6 +3092,25 @@ void CGameClientShell::UpdatePlaying()
 	if (s_szShotFile[0])
 	{
 		SaveScreenBmp(s_szShotFile);
+		HCONSOLEVAR damageShots = g_pLTClient->GetConsoleVar("ShotDamageFX");
+		if (damageShots && g_pLTClient->GetVarValueFloat(damageShots) > 0.0f)
+		{
+			const char* separator = strrchr(s_szShotFile, '/');
+			if (!separator) separator = strrchr(s_szShotFile, '\\');
+			char path[512];
+			sprintf(path, "%.*sshotdamagefx.txt", separator ? (int)(separator - s_szShotFile + 1) : 0, s_szShotFile);
+			FILE* trace = fopen(path, s_nShot == 0 ? "w" : "a");
+			if (trace)
+			{
+				LTFLOAT state[7], horizontal, vertical;
+				m_DamageFXMgr.GetDebugState(state);
+				g_pLTClient->GetCameraFOV(m_hCamera, &horizontal, &vertical);
+				fprintf(trace, "%s %.9f %.9f %.9f %.9f %.9f %.9f %.9f %.9f %.9f %.9f\n",
+					s_ShotPoses[s_nShot].szName, g_pLTClient->GetGameTime() - s_fWorldEnterTime,
+					state[0], state[1], state[2], state[3], state[4], state[5], state[6], horizontal, vertical);
+				fclose(trace);
+			}
+		}
 		s_szShotFile[0] = 0;
 		s_nShot++;
 	}
@@ -7944,6 +7963,22 @@ void CGameClientShell::UpdateShots()
 		// shape against 4:3 and takes FovY as it is...
 
 		SetCameraFOV(DEG2RAD(90.0f), 2.0f * (LTFLOAT)atan(0.75));
+	}
+
+	// Damage updates first remove the offsets from the preceding frame. Keep
+	// those offsets on the new pose's base FOV so a shot measures the full swing.
+	HCONSOLEVAR damageShots = g_pLTClient->GetConsoleVar("ShotDamageFX");
+	if (damageShots && g_pLTClient->GetVarValueFloat(damageShots) > 0.0f)
+	{
+		// Poison takes its roll from these shell angles rather than the posed
+		// camera's rotation, so keep the two views on the same pose.
+		m_fPitch = pose.fPitch;
+		m_fYaw = pose.fYaw;
+		m_fRoll = 0.0f;
+		LTFLOAT horizontal, vertical, offsetX, offsetY;
+		g_pLTClient->GetCameraFOV(m_hCamera, &horizontal, &vertical);
+		m_DamageFXMgr.GetFOVOffsets(offsetX, offsetY);
+		g_pLTClient->SetCameraFOV(m_hCamera, horizontal + offsetX, vertical + offsetY);
 	}
 
 	// UpdatePlaying() saves this frame once it's rendered...

@@ -300,6 +300,32 @@ void CDamageFXMgr::Clear()
     StopElectrocuteFX(LTFALSE);
 }
 
+// Read the offsets already present in the camera before the next damage update.
+// Pose photography uses these when replacing its base field of view.
+void CDamageFXMgr::GetFOVOffsets(LTFLOAT& horizontal, LTFLOAT& vertical) const
+{
+	horizontal = (m_bPoison || m_bPoisonFade) ? m_fFOVXOffset * m_fMoveMult : 0.0f;
+	vertical = (m_bPoison || m_bPoisonFade) ? m_fFOVYOffset * m_fMoveMult : 0.0f;
+	if (m_bSleeping || m_bSleepingFade)
+	{
+		horizontal += m_fSleepFOVOffset;
+		vertical += m_fSleepFOVOffset;
+	}
+}
+
+// Raw state for opt-in damage-effect photographs: poison angles and movement
+// multiplier, stun brightness, sleep angle/darkening, and poison roll.
+void CDamageFXMgr::GetDebugState(LTFLOAT values[7]) const
+{
+	values[0] = m_fFOVXOffset;
+	values[1] = m_fFOVYOffset;
+	values[2] = m_fMoveMult;
+	values[3] = m_vStunColor.x;
+	values[4] = m_fSleepFOVOffset;
+	values[5] = m_fSleepDark;
+	values[6] = m_fOffsetRot;
+}
+
 void CDamageFXMgr::StartBleedingFX()
 {
 	if (!m_bBleeding)
