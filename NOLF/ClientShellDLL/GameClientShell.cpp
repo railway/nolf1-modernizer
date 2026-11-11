@@ -62,6 +62,7 @@
 #include <SDL.h>
 #include "ConsoleMgr.h"
 #include "DetourMgr.h"
+#include "WorldModelTrace.h"
 
 extern ConsoleMgr* g_pConsoleMgr;
 
@@ -2521,6 +2522,7 @@ uint32 CGameClientShell::OnEngineInitialized(RMode *pMode, LTGUID *pAppGuid)
 void CGameClientShell::OnEngineTerm()
 {
     UnhookWindow();
+	WorldModelTrace::Shutdown();
 
 	// Remove the console detours before this dll is unloaded, the engine still prints afterwards
 	if (g_pDetourMgr)
@@ -3085,7 +3087,9 @@ void CGameClientShell::UpdatePlaying()
 
 	// Render the camera...
 
+	WorldModelTrace::Begin(s_szShotFile);
 	RenderCamera();
+	WorldModelTrace::End();
 
 	UpdateDemoTools();
 
