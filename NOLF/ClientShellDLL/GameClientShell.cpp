@@ -7946,6 +7946,17 @@ void CGameClientShell::UpdateShots()
 		SetCameraFOV(DEG2RAD(90.0f), 2.0f * (LTFLOAT)atan(0.75));
 	}
 
+	// Damage updates first remove the offsets from the preceding frame. Keep
+	// those offsets on the new pose's base FOV so a shot measures the full swing.
+	HCONSOLEVAR damageShots = g_pLTClient->GetConsoleVar("ShotDamageFX");
+	if (damageShots && g_pLTClient->GetVarValueFloat(damageShots) > 0.0f)
+	{
+		LTFLOAT horizontal, vertical, offsetX, offsetY;
+		g_pLTClient->GetCameraFOV(m_hCamera, &horizontal, &vertical);
+		m_DamageFXMgr.GetFOVOffsets(offsetX, offsetY);
+		g_pLTClient->SetCameraFOV(m_hCamera, horizontal + offsetX, vertical + offsetY);
+	}
+
 	// UpdatePlaying() saves this frame once it's rendered...
 
 	if (fTime >= s_fShotTime)

@@ -32,6 +32,7 @@ public:
 
 	void Update();
 	void Clear();
+	void GetFOVOffsets(LTFLOAT& horizontal, LTFLOAT& vertical) const;
 
 	void StartBleedingFX();
     void StopBleedingFX(LTBOOL bFade = LTTRUE);

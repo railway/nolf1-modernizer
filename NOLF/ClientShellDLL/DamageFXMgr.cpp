@@ -300,6 +300,19 @@ void CDamageFXMgr::Clear()
     StopElectrocuteFX(LTFALSE);
 }
 
+// Read the offsets already present in the camera before the next damage update.
+// Pose photography uses these when replacing its base field of view.
+void CDamageFXMgr::GetFOVOffsets(LTFLOAT& horizontal, LTFLOAT& vertical) const
+{
+	horizontal = (m_bPoison || m_bPoisonFade) ? m_fFOVXOffset * m_fMoveMult : 0.0f;
+	vertical = (m_bPoison || m_bPoisonFade) ? m_fFOVYOffset * m_fMoveMult : 0.0f;
+	if (m_bSleeping || m_bSleepingFade)
+	{
+		horizontal += m_fSleepFOVOffset;
+		vertical += m_fSleepFOVOffset;
+	}
+}
+
 void CDamageFXMgr::StartBleedingFX()
 {
 	if (!m_bBleeding)
