@@ -7868,6 +7868,75 @@ void CGameClientShell::SavePose(const char* pName)
 //
 // ----------------------------------------------------------------------- //
 
+// +ShotLightPoints <file> records lighting without changing it. Lines are
+// <pose name> <x> <y> <z>; only the current pose's points are sampled. The
+// nearest character's position, colour and sample distinguish table lighting
+// from the model's own tint. ErrorLog retains the console output after quitting.
+static void TraceShotLight(const char* poseName, CSpecialFXList* characters)
+{
+	HCONSOLEVAR option = g_pLTClient->GetConsoleVar("ShotLightPoints");
+	const char* path = option ? g_pLTClient->GetVarValueString(option) : LTNULL;
+	if (!path || !path[0]) return;
+	FILE* points = fopen(path, "r");
+	if (!points)
+	{
+		g_pLTClient->CPrint("ShotLightPoints: cannot open %s", path);
+		return;
+	}
+
+	LTVector scale;
+	g_pLTClient->GetGlobalLightScale(&scale);
+	float ambient = 0.0f;
+	LTRESULT ambientResult = g_pLTClient->GetAmbientLight(ambient);
+	g_pLTClient->CPrint("ShotLightPoints: %s global %.9f %.9f %.9f ambient %d %.9f",
+		poseName, scale.x, scale.y, scale.z, ambientResult, ambient);
+
+	char line[256], name[64];
+	LTVector point;
+	while (fgets(line, sizeof(line), points))
+	{
+		if (sscanf(line, "%63s %f %f %f", name, &point.x, &point.y, &point.z) != 4 ||
+			strcmp(name, poseName)) continue;
+		LTVector shade(0.0f, 0.0f, 0.0f);
+		LTRESULT result = g_pLTClient->GetPointShade(&point, &shade);
+		g_pLTClient->CPrint("ShotLightPoints: %s point %.9f %.9f %.9f shade %d %.9f %.9f %.9f",
+			poseName, point.x, point.y, point.z, result, shade.x, shade.y, shade.z);
+
+		HLOCALOBJ nearest = LTNULL;
+		float distanceSquared = 0.0f;
+		for (int i = 0; characters && i < characters->GetSize(); ++i)
+		{
+			CSpecialFX* effect = (*characters)[i];
+			HLOCALOBJ object = effect ? effect->GetServerObj() : LTNULL;
+			if (!object) continue;
+			LTVector position;
+			g_pLTClient->GetObjectPos(object, &position);
+			LTVector delta = position - point;
+			float candidate = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
+			if (!nearest || candidate < distanceSquared)
+			{
+				nearest = object;
+				distanceSquared = candidate;
+			}
+		}
+		if (!nearest)
+		{
+			g_pLTClient->CPrint("ShotLightPoints: %s no character", poseName);
+			continue;
+		}
+		LTVector position;
+		float red, green, blue, alpha;
+		g_pLTClient->GetObjectPos(nearest, &position);
+		g_pLTClient->GetObjectColor(nearest, &red, &green, &blue, &alpha);
+		result = g_pLTClient->GetPointShade(&position, &shade);
+		g_pLTClient->CPrint("ShotLightPoints: %s character %.9f %.9f %.9f distance2 %.9f shade %d %.9f %.9f %.9f tint %.9f %.9f %.9f %.9f flags %u",
+			poseName, position.x, position.y, position.z, distanceSquared, result,
+			shade.x, shade.y, shade.z, red, green, blue, alpha,
+			g_pLTClient->GetObjectFlags(nearest));
+	}
+	fclose(points);
+}
+
 void CGameClientShell::UpdateShots()
 {
 	HCONSOLEVAR hVar = g_pLTClient->GetConsoleVar("ShotPoses");
@@ -8035,6 +8104,7 @@ void CGameClientShell::UpdateShots()
 			fclose(pClock);
 		}
 
+		TraceShotLight(pose.szName, m_sfxMgr.GetFXList(SFX_CHARACTER_ID));
 		SDL_Log("ShotPoses: %s", s_szShotFile);
 		s_fShotTime = fTime + SHOT_POSE_DELAY;
 	}

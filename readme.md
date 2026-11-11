@@ -165,6 +165,15 @@ For comparing the game's rendering between builds, the same camera poses can be 
       +runworld worlds/m01s01 +ShotPoses shots/poses.txt
   ```
 
+`+ShotLightPoints <file>` optionally records lighting at each pose without changing what is drawn.
+Each input line is `<pose name> <x> <y> <z>` in world units. For matching names, the console records
+the point's `GetPointShade` RGB (0–255) and result code, the nearest character's actual position,
+squared distance from the requested point, table RGB, object tint (0–1), and flags. It also records
+the global light scale and ambient-light API result. Check the nearest character's position and
+distance before treating its tint as the intended character's. Without the option it reads and
+records nothing. An unreadable file is reported in the console. Use `+ErrorLog 1 +AlwaysFlushLog 1
++errorlogfile <file>` to retain these lines after quitting.
+
 The engine's own screenshot (F8, `Screenshot<n>.bmp`, base name from `SSFile`) comes out black under Wine, so the shots read the frame back through the client API. Starting a world with `+runworld` rewrites `Save/Reload.sav` and `Save/Summary.sav`; back `Save/` up first.
 
 ## Contributing
