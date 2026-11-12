@@ -73,6 +73,7 @@ class CSmokeFX : public CBaseParticleSystemFX
             m_bIgnoreWind           = LTFALSE;
             m_hstrTexture           = LTNULL;
 			m_nLastTraceBatch = 0;
+			m_szTraceTexture[0] = 0;
 		}
 
         virtual LTBOOL Init(SFXCREATESTRUCT* psfxCreateStruct);
@@ -108,6 +109,7 @@ class CSmokeFX : public CBaseParticleSystemFX
 
         LTBOOL   m_bIgnoreWind;          // Ignore world wind
 		int m_nLastTraceBatch;
+		char m_szTraceTexture[512];
 };
 
 #endif // __SMOKE_FX_H__

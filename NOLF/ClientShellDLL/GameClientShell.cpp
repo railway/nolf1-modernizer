@@ -45,6 +45,7 @@
 #include "PlayerShared.h"
 #include "CharacterFX.h"
 #include <time.h>
+#include "FireParticleProbe.h"
 
 #if _MSC_VER >= 1300
 #include <iostream>
@@ -2771,6 +2772,7 @@ void CGameClientShell::OnEnterWorld()
 
 	s_nShotPoses = -1;
 	s_fWorldEnterTime = g_pLTClient->GetGameTime();
+	ResetFireParticleProbe();
 	s_nDemoShot = 0;
 	s_nDemoWorlds++;
 
@@ -8747,8 +8749,17 @@ void CGameClientShell::RenderCamera(LTBOOL bDrawInterface)
 
 	m_FlashLight.Update();
 
+    HLOCALOBJ fireProbe = PrepareFireParticleProbe();
+    if (fireProbe && FireProbeValue("FireProbeBackground", 0) == 0)
+        g_pLTClient->ClearScreen(LTNULL, CLEARSCREEN_SCREEN | CLEARSCREEN_RENDER);
     g_pLTClient->Start3D();
-    g_pLTClient->RenderCamera(m_hCamera);
+    IDirect3DDevice7* fireTraceDevice = BeginFireDrawTrace(s_szShotFile);
+    if (fireProbe && FireProbeValue("FireProbeBackground", 0) == 0)
+    {
+        g_pLTClient->RenderObjects(m_hCamera, &fireProbe, 1);
+    }
+    else g_pLTClient->RenderCamera(m_hCamera);
+    EndFireDrawTrace(fireTraceDevice);
     g_pLTClient->StartOptimized2D();
 
 	// Alternate Screen Tinting!

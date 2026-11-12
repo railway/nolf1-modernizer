@@ -73,7 +73,8 @@ LTBOOL CSmokeFX::CreateObject(ILTClient *pClientDE)
 		m_pTextureName = pClientDE->GetStringData(m_hstrTexture);
 	}
 
-    LTBOOL bRet = CBaseParticleSystemFX::CreateObject(pClientDE);
+	lstrcpyn(m_szTraceTexture, m_pTextureName ? m_pTextureName : "", sizeof(m_szTraceTexture));
+	LTBOOL bRet = CBaseParticleSystemFX::CreateObject(pClientDE);
 
 	return bRet;
 }
@@ -228,7 +229,7 @@ void CSmokeFX::TraceFire(const char* label)
 	float fovX, fovY;
 	g_pLTClient->GetCameraFOV(camera, &fovX, &fovY);
 	char texture[512];
-	lstrcpyn(texture, m_pTextureName ? m_pTextureName : "", sizeof(texture));
+	lstrcpyn(texture, m_szTraceTexture, sizeof(texture));
 	for (char* c = texture; *c; ++c) if (*c == '\\') *c = '/';
 	fprintf(output, "{\"kind\":\"fire-system\",\"shell\":%.7f,\"game\":%.7f,\"id\":\"%p\",\"label\":\"%s\","
 		"\"origin\":[%.7f,%.7f,%.7f],\"eye\":[%.7f,%.7f,%.7f],\"right\":[%.7f,%.7f,%.7f],"
