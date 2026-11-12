@@ -576,15 +576,6 @@ void CAttachments::CreatePropAttachment(CAttachmentPosition *pAttachmentPosition
 	LTRotation rRot;
     g_pLTServer->GetObjectRotation(pModel->m_hObject, &rRot);
 
-	HCONVAR trace = g_pLTServer->GetGameConVar("ShotAttachments");
-	if (trace && g_pLTServer->GetVarValueFloat(trace) > 0.0f)
-	{
-		const uint32 animation = g_pLTServer->GetModelAnimation(pModel->m_hObject);
-		g_pLTServer->CPrint("AttachmentPose create %s %s anim %u %s rot %.9g %.9g %.9g %.9g",
-			pAttachmentPosition->GetName(), szModel, animation,
-			g_pLTServer->GetAnimName(pModel->m_hObject, animation), rRot[0], rRot[1], rRot[2], rRot[3]);
-	}
-
 	// Attach it
 
 	HATTACHMENT hAttachment;

@@ -47,8 +47,6 @@ static void Node(HOBJECT object, HMODELNODE node, const char* kind)
 
 static void Nodes(HOBJECT object)
 {
-	// Query node zero explicitly as well as using the legacy iterator.
-	Node(object, 0, "root-local");
 	HMODELNODE node = INVALID_MODEL_NODE;
 	unsigned count = 0;
 	while (count++ < 256 && g_pLTClient->GetNextModelNode(object, node, &node) == LT_OK)
