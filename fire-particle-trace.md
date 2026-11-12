@@ -31,6 +31,9 @@ RGB channels in 0..255 (default 100). `FireProbeBackground 0` draws only this
 object over a cleared background; `1` keeps the world, smoke and lights but
 hides the ordinary flames. A tint-zero background measurement can separate its
 contribution. These switches are diagnostics and do not alter ordinary play.
+`+FireProbePair 1`, with the world background, also saves `<pose>_background.bmp`
+from the same game state with only the probe hidden. It renders again without
+another game/effect update, so contribution measurements need no second take.
 
 `+FireDrawTrace 1` captures the actual pretransformed additive draw inputs on pose
 screenshot frames: vertices, UVs, packed diffuse tint, loaded texture dimensions,

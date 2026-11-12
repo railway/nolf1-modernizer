@@ -8753,6 +8753,22 @@ void CGameClientShell::RenderCamera(LTBOOL bDrawInterface)
     TraceFireProbeInput(fireProbe, m_hCamera, s_szShotFile);
     if (fireProbe && FireProbeValue("FireProbeBackground", 0) == 0)
         g_pLTClient->ClearScreen(LTNULL, CLEARSCREEN_SCREEN | CLEARSCREEN_RENDER);
+    if (fireProbe && s_szShotFile[0] && FireProbeValue("FireProbeBackground", 0) != 0 && FireProbeValue("FireProbePair", 0) != 0)
+    {
+        // Draw the same world state once without this particle. There is no
+        // second game/effect update between the background and ordinary shot.
+        uint32 flags = g_pLTClient->GetObjectFlags(fireProbe);
+        g_pLTClient->SetObjectFlags(fireProbe, flags & ~FLAG_VISIBLE);
+        g_pLTClient->ClearScreen(LTNULL, CLEARSCREEN_SCREEN | CLEARSCREEN_RENDER);
+        g_pLTClient->Start3D();
+        g_pLTClient->RenderCamera(m_hCamera);
+        g_pLTClient->End3D();
+        char background[512];
+        _snprintf(background, sizeof(background), "%.*s_background.bmp", (int)strlen(s_szShotFile) - 4, s_szShotFile);
+        SaveScreenBmp(background);
+        g_pLTClient->SetObjectFlags(fireProbe, flags);
+        g_pLTClient->ClearScreen(LTNULL, CLEARSCREEN_SCREEN | CLEARSCREEN_RENDER);
+    }
     g_pLTClient->Start3D();
     IDirect3DDevice7* fireTraceDevice = BeginFireDrawTrace(s_szShotFile);
     if (fireProbe && FireProbeValue("FireProbeBackground", 0) == 0)
