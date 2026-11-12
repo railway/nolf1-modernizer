@@ -1,5 +1,6 @@
 // Optional read-only pose measurement through the model SDK.
 // +ShotAttachments 1 logs character, node, socket and attached-object transforms at +ShotPoses frames.
+// Enable ErrorLog and AlwaysFlushLog to capture these console lines.
 #pragma once
 
 namespace AttachmentPoseTrace
@@ -7,7 +8,7 @@ namespace AttachmentPoseTrace
 
 static void Print(const char* kind, HOBJECT object, const char* name, LTransform& transform)
 {
-	SDL_Log("AttachmentPose %s %p %s pos %.9g %.9g %.9g rot %.9g %.9g %.9g %.9g",
+	g_pLTClient->CPrint("AttachmentPose %s %p %s pos %.9g %.9g %.9g rot %.9g %.9g %.9g %.9g",
 		kind, object, name, transform.m_Pos.x, transform.m_Pos.y, transform.m_Pos.z,
 		transform.m_Rot[0], transform.m_Rot[1], transform.m_Rot[2], transform.m_Rot[3]);
 }
@@ -20,7 +21,7 @@ static void Object(HOBJECT object, const char* kind, const char* name)
 	Print(kind, object, name, transform);
 	LTVector scale;
 	if (g_pLTClient->GetObjectScale(object, &scale) == LT_OK)
-		SDL_Log("AttachmentPose scale %p %.9g %.9g %.9g", object, scale.x, scale.y, scale.z);
+		g_pLTClient->CPrint("AttachmentPose scale %p %.9g %.9g %.9g", object, scale.x, scale.y, scale.z);
 }
 
 static void Nodes(HOBJECT object)
@@ -41,7 +42,7 @@ static void Write(const char* pose, CSpecialFXList* characters)
 {
 	HCONSOLEVAR enabled = g_pLTClient->GetConsoleVar("ShotAttachments");
 	if (!enabled || g_pLTClient->GetVarValueFloat(enabled) <= 0.0f || !characters) return;
-	SDL_Log("AttachmentPose begin %s", pose);
+	g_pLTClient->CPrint("AttachmentPose begin %s", pose);
 	const char* names[] = {"RightHand", "LeftHand", "Head", "Eyes", "Back", "Nose", "Chin",
 		"LeftFoot", "RightFoot", "Motorcycle", "Snowmobile", "Mouth"};
 	for (int index = 0; index < characters->GetSize(); ++index)
@@ -53,7 +54,7 @@ static void Write(const char* pose, CSpecialFXList* characters)
 		uint32 stored = 0, total = 0;
 		if (g_pLTClient->GetAttachments(parent, children, 32, &stored, &total) != LT_OK || !total) continue;
 		Object(parent, "parent", g_pModelButeMgr->GetModelName(character->GetModelId()));
-		SDL_Log("AttachmentPose children %p %u %u", parent, stored, total);
+		g_pLTClient->CPrint("AttachmentPose children %p %u %u", parent, stored, total);
 		Nodes(parent);
 		for (unsigned index = 0; index < sizeof(names) / sizeof(names[0]); ++index)
 		{
@@ -67,12 +68,12 @@ static void Write(const char* pose, CSpecialFXList* characters)
 		}
 		for (uint32 index = 0; index < stored && index < 32; ++index)
 		{
-			SDL_Log("AttachmentPose child-of %p %p", children[index], parent);
+			g_pLTClient->CPrint("AttachmentPose child-of %p %p", children[index], parent);
 			Object(children[index], "child", "attached");
 			Nodes(children[index]);
 		}
 	}
-	SDL_Log("AttachmentPose end %s", pose);
+	g_pLTClient->CPrint("AttachmentPose end %s", pose);
 }
 
 }
