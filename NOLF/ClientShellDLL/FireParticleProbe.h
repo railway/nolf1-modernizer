@@ -34,6 +34,8 @@ static HLOCALOBJ PrepareFireParticleProbe()
 		INIT_OBJECTCREATESTRUCT(create);
 		create.m_ObjectType = OT_PARTICLESYSTEM;
 		create.m_Flags = FLAG_VISIBLE | FLAG_UPDATEUNSEEN | FLAG_FOGDISABLE | FLAG_NOGLOBALLIGHTSCALE;
+		if (FireProbeValue("FireProbeReallyClose", 0) != 0)
+			create.m_Flags |= FLAG_REALLYCLOSE;
 		create.m_Pos.Init(FireProbeValue("FireProbeX", 0), FireProbeValue("FireProbeY", 0), FireProbeValue("FireProbeZ", 0));
 		object = g_pLTClient->CreateObject(&create);
 		if (!object) return LTNULL;
@@ -82,8 +84,9 @@ static void TraceFireProbeInput(HLOCALOBJ object, HLOCALOBJ camera, const char* 
 	uint32 width, height;
 	g_pLTClient->GetSurfaceDims(g_pLTClient->GetScreenSurface(), &width, &height);
 	printf("{\"kind\":\"fire-probe\",\"shot\":\"%s\",\"size\":%.7f,\"remaining\":%.7f,\"total\":%.7f,"
-		"\"origin\":[%.7f,%.7f,%.7f],\"eye\":[%.7f,%.7f,%.7f],\"fov\":[%.7f,%.7f],\"screen\":[%u,%u]}\n",
-		shot, particle->m_Size, remaining, total, origin.x, origin.y, origin.z, eye.x, eye.y, eye.z, fovX, fovY, width, height);
+		"\"origin\":[%.7f,%.7f,%.7f],\"eye\":[%.7f,%.7f,%.7f],\"fov\":[%.7f,%.7f],\"screen\":[%u,%u],\"really_close\":%u}\n",
+		shot, particle->m_Size, remaining, total, origin.x, origin.y, origin.z, eye.x, eye.y, eye.z, fovX, fovY, width, height,
+		(g_pLTClient->GetObjectFlags(object) & FLAG_REALLYCLOSE) ? 1 : 0);
 }
 
 static void TraceFireMipChain(IDirectDrawSurface7* texture)
