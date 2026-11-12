@@ -351,6 +351,8 @@ LTBOOL CFireFX::Update()
 
 	m_Fire1.Update();
 	m_Fire2.Update();
+	m_Fire1.TraceFire("outer");
+	m_Fire2.TraceFire("inner");
 
 
 	// Hide/show the fire if necessary...
