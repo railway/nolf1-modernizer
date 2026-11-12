@@ -22,19 +22,38 @@ static void Object(HOBJECT object, const char* kind, const char* name)
 	LTVector scale;
 	if (g_pLTClient->GetObjectScale(object, &scale) == LT_OK)
 		g_pLTClient->CPrint("AttachmentPose scale %p %.9g %.9g %.9g", object, scale.x, scale.y, scale.z);
+	LTAnimTracker* tracker = NULL;
+	if (g_pModelLT->GetMainTracker(object, tracker) == LT_OK && tracker)
+	{
+		HMODELANIM animation = 0;
+		uint32 time = 0, length = 0;
+		if (g_pModelLT->GetCurAnim(tracker, animation) == LT_OK &&
+			g_pModelLT->GetCurAnimTime(tracker, time) == LT_OK &&
+			g_pModelLT->GetCurAnimLength(tracker, length) == LT_OK)
+			g_pLTClient->CPrint("AttachmentPose animation %p %u %u %u", object, animation, time, length);
+	}
+}
+
+static void Node(HOBJECT object, HMODELNODE node, const char* kind)
+{
+	char name[128];
+	if (g_pLTClient->GetModelNodeName(object, node, name, sizeof(name)) != LT_OK) return;
+	LTransform transform;
+	if (g_pModelLT->GetNodeTransform(object, node, transform, LTFALSE) == LT_OK)
+		Print(kind, object, name, transform);
+	if (g_pModelLT->GetNodeTransform(object, node, transform, LTTRUE) == LT_OK)
+		Print("node-world", object, name, transform);
 }
 
 static void Nodes(HOBJECT object)
 {
+	// Query node zero explicitly as well as using the legacy iterator.
+	Node(object, 0, "root-local");
 	HMODELNODE node = INVALID_MODEL_NODE;
 	unsigned count = 0;
 	while (count++ < 256 && g_pLTClient->GetNextModelNode(object, node, &node) == LT_OK)
 	{
-		char name[128];
-		if (g_pLTClient->GetModelNodeName(object, node, name, sizeof(name)) != LT_OK) continue;
-		LTransform transform;
-		if (g_pModelLT->GetNodeTransform(object, node, transform, LTFALSE) == LT_OK)
-			Print("node-local", object, name, transform);
+		Node(object, node, "node-local");
 	}
 }
 
