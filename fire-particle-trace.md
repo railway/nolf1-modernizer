@@ -37,6 +37,9 @@ screenshot frames: vertices, UVs, packed diffuse tint, loaded texture dimensions
 pixel format, blend factors and min/mag/mip filters. `+FireProbePixels 1` also
 locks and records the top-level texture bytes. The lock may stall the GPU; those
 takes are not population or frame-time measurements.
+The attached mip surfaces are recorded too, with LOD bias, maximum mip, address
+modes and texture color-stage state. A `fire-probe` record reads the particle's
+actual size and remaining/total life immediately before that screenshot render.
 
 The renderer's device location is a last-resort measurement interface: the SDK
 does not expose particle sprite phase or its loaded texture. The probe requires

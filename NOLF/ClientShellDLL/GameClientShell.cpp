@@ -8750,6 +8750,7 @@ void CGameClientShell::RenderCamera(LTBOOL bDrawInterface)
 	m_FlashLight.Update();
 
     HLOCALOBJ fireProbe = PrepareFireParticleProbe();
+    TraceFireProbeInput(fireProbe, m_hCamera, s_szShotFile);
     if (fireProbe && FireProbeValue("FireProbeBackground", 0) == 0)
         g_pLTClient->ClearScreen(LTNULL, CLEARSCREEN_SCREEN | CLEARSCREEN_RENDER);
     g_pLTClient->Start3D();
