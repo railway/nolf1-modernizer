@@ -63,6 +63,7 @@
 #include "ConsoleMgr.h"
 #include "DetourMgr.h"
 #include "WorldModelTrace.h"
+#include "AttachmentPoseTrace.h"
 
 extern ConsoleMgr* g_pConsoleMgr;
 
@@ -3095,6 +3096,7 @@ void CGameClientShell::UpdatePlaying()
 
 	if (s_szShotFile[0])
 	{
+		AttachmentPoseTrace::Write(s_ShotPoses[s_nShot].szName, m_sfxMgr.GetFXList(SFX_CHARACTER_ID));
 		SaveScreenBmp(s_szShotFile);
 		HCONSOLEVAR damageShots = g_pLTClient->GetConsoleVar("ShotDamageFX");
 		if (damageShots && g_pLTClient->GetVarValueFloat(damageShots) > 0.0f)
