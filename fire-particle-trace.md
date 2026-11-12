@@ -31,6 +31,10 @@ RGB channels in 0..255 (default 100). `FireProbeBackground 0` draws only this
 object over a cleared background; `1` keeps the world, smoke and lights but
 hides the ordinary flames. A tint-zero background measurement can separate its
 contribution. These switches are diagnostics and do not alter ordinary play.
+`FireProbeReallyClose 1` creates the particle object with `FLAG_REALLYCLOSE`, as
+the first-person particle muzzle does. Its X/Y/Z then specify the camera-relative
+centre. The `fire-probe` input record reports the actual flag alongside size and
+camera state, so its submitted corners can be compared with the world-space case.
 `+FireProbePair 1`, with the world background, also saves `<pose>_background.bmp`
 from the same game state with only the probe hidden. It renders again without
 another game/effect update, so contribution measurements need no second take.
