@@ -218,7 +218,7 @@ void CSmokeFX::TraceFire(const char* label)
 	g_pLTClient->GetObjectPos(m_hObject, &origin);
 	g_pLTClient->GetObjectPos(camera, &eye);
 	g_pLTClient->GetObjectRotation(camera, &rotation);
-	g_pLTClient->Math()->GetRotationVectors(rotation, right, up, forward);
+	g_pLTClient->GetMathLT()->GetRotationVectors(rotation, right, up, forward);
 	HCONSOLEVAR range = g_pLTClient->GetConsoleVar("FireTraceDistance");
 	float distance = range ? g_pLTClient->GetVarValueFloat(range) : 1000.0f;
 	if ((origin - eye).Mag() > distance) return;
