@@ -208,7 +208,7 @@ void CSmokeFX::TraceFire(const char* label)
 	const char* path = option ? g_pLTClient->GetVarValueString(option) : LTNULL;
 	if (!path || !path[0] || !m_hObject) return;
 	static FILE* output = LTNULL;
-	if (!output) output = fopen(path, "w");
+	if (!output) output = !strcmp(path, "-") ? stdout : fopen(path, "w");
 	if (!output) return;
 
 	HLOCALOBJ camera = g_pGameClientShell->GetCamera();

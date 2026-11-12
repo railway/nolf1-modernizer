@@ -3,6 +3,9 @@
 `+FireTrace <file>` enables an optional JSONL measurement of the two additive
 systems of each Fire near the camera. `+FireTraceDistance <units>` changes the
 maximum camera distance (default 1000). Without a file the trace is disabled.
+Use `+FireTrace -` or `+DemoTrack -` to send those records to standard output.
+The latter also supplies view timestamps for an otherwise identical trace-off
+measurement of frame times.
 
 Each record follows the normal Fire update and contains both clocks, the system
 and particle identities, last actual birth time and batch count, the camera basis

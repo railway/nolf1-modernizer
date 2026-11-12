@@ -592,7 +592,7 @@ static FILE* DemoTrackFile()
 		char* pFile = hVar ? g_pLTClient->GetVarValueString(hVar) : LTNULL;
 		if (pFile && pFile[0])
 		{
-			s_pDemoTrack = fopen(pFile, "w");
+			s_pDemoTrack = !strcmp(pFile, "-") ? stdout : fopen(pFile, "w");
 		}
 	}
 	return s_pDemoTrack;
