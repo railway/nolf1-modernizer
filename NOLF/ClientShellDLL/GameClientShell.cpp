@@ -45,6 +45,7 @@
 #include "PlayerShared.h"
 #include "CharacterFX.h"
 #include <time.h>
+#include "FireParticleProbe.h"
 
 #if _MSC_VER >= 1300
 #include <iostream>
@@ -593,7 +594,7 @@ static FILE* DemoTrackFile()
 		char* pFile = hVar ? g_pLTClient->GetVarValueString(hVar) : LTNULL;
 		if (pFile && pFile[0])
 		{
-			s_pDemoTrack = fopen(pFile, "w");
+			s_pDemoTrack = !strcmp(pFile, "-") ? stdout : fopen(pFile, "w");
 		}
 	}
 	return s_pDemoTrack;
@@ -2772,6 +2773,7 @@ void CGameClientShell::OnEnterWorld()
 
 	s_nShotPoses = -1;
 	s_fWorldEnterTime = g_pLTClient->GetGameTime();
+	ResetFireParticleProbe();
 	s_nDemoShot = 0;
 	s_nDemoWorlds++;
 
@@ -8749,8 +8751,34 @@ void CGameClientShell::RenderCamera(LTBOOL bDrawInterface)
 
 	m_FlashLight.Update();
 
+    HLOCALOBJ fireProbe = PrepareFireParticleProbe();
+    TraceFireProbeInput(fireProbe, m_hCamera, s_szShotFile);
+    if (fireProbe && FireProbeValue("FireProbeBackground", 0) == 0)
+        g_pLTClient->ClearScreen(LTNULL, CLEARSCREEN_SCREEN | CLEARSCREEN_RENDER);
+    if (fireProbe && s_szShotFile[0] && FireProbeValue("FireProbeBackground", 0) != 0 && FireProbeValue("FireProbePair", 0) != 0)
+    {
+        // Draw the same world state once without this particle. There is no
+        // second game/effect update between the background and ordinary shot.
+        uint32 flags = g_pLTClient->GetObjectFlags(fireProbe);
+        g_pLTClient->SetObjectFlags(fireProbe, flags & ~FLAG_VISIBLE);
+        g_pLTClient->ClearScreen(LTNULL, CLEARSCREEN_SCREEN | CLEARSCREEN_RENDER);
+        g_pLTClient->Start3D();
+        g_pLTClient->RenderCamera(m_hCamera);
+        g_pLTClient->End3D();
+        char background[512];
+        _snprintf(background, sizeof(background), "%.*s_background.bmp", (int)strlen(s_szShotFile) - 4, s_szShotFile);
+        SaveScreenBmp(background);
+        g_pLTClient->SetObjectFlags(fireProbe, flags);
+        g_pLTClient->ClearScreen(LTNULL, CLEARSCREEN_SCREEN | CLEARSCREEN_RENDER);
+    }
     g_pLTClient->Start3D();
-    g_pLTClient->RenderCamera(m_hCamera);
+    IDirect3DDevice7* fireTraceDevice = BeginFireDrawTrace(s_szShotFile);
+    if (fireProbe && FireProbeValue("FireProbeBackground", 0) == 0)
+    {
+        g_pLTClient->RenderObjects(m_hCamera, &fireProbe, 1);
+    }
+    else g_pLTClient->RenderCamera(m_hCamera);
+    EndFireDrawTrace(fireTraceDevice);
     g_pLTClient->StartOptimized2D();
 
 	// Alternate Screen Tinting!

@@ -351,6 +351,15 @@ LTBOOL CFireFX::Update()
 
 	m_Fire1.Update();
 	m_Fire2.Update();
+	m_Fire1.TraceFire("outer");
+	m_Fire2.TraceFire("inner");
+	HCONSOLEVAR probe = g_pLTClient->GetConsoleVar("FireProbeTexture");
+	if (probe && g_pLTClient->GetVarValueString(probe)[0])
+	{
+		HLOCALOBJ flames[] = {m_Fire1.GetObject(), m_Fire2.GetObject()};
+		for (int i = 0; i < 2; ++i) if (flames[i])
+			g_pLTClient->SetObjectFlags(flames[i], g_pLTClient->GetObjectFlags(flames[i]) & ~FLAG_VISIBLE);
+	}
 
 
 	// Hide/show the fire if necessary...

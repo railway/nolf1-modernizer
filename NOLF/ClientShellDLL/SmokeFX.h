@@ -72,11 +72,16 @@ class CSmokeFX : public CBaseParticleSystemFX
 			m_fMaxParticleLife		= 10.0f;
             m_bIgnoreWind           = LTFALSE;
             m_hstrTexture           = LTNULL;
+			m_nLastTraceBatch = 0;
+			m_szTraceTexture[0] = 0;
 		}
 
         virtual LTBOOL Init(SFXCREATESTRUCT* psfxCreateStruct);
         virtual LTBOOL Update();
         virtual LTBOOL CreateObject(ILTClient* pClientDE);
+
+		// Optional read-only Fire population trace; +FireTrace names its JSONL file.
+		void TraceFire(const char* label);
 
         inline void SetDriftVel(LTVector vMinVel, LTVector vMaxVel)
 		{
@@ -103,6 +108,8 @@ class CSmokeFX : public CBaseParticleSystemFX
 		HSTRING m_hstrTexture;			// Texture to sprite to use
 
         LTBOOL   m_bIgnoreWind;          // Ignore world wind
+		int m_nLastTraceBatch;
+		char m_szTraceTexture[512];
 };
 
 #endif // __SMOKE_FX_H__
